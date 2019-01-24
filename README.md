@@ -8,19 +8,21 @@ It was named after french singer (and also mathematician) [Boby Lapointe](https:
 
 ### Example : code using crate
 
-       extern crate bibicode;
+```rust
+extern crate bibicode;
 
-       let dec = bibicode::NumeralSystem::new(vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-       let bibi = bibicode::NumeralSystem::new(vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"))).unwrap();
-       let coder = bibicode::BibiCoder::new(dec, bibi);
-       let test = coder.swap("2000").unwrap();
-       assert_eq!(test, "BIDAHO");
+let dec = bibicode::NumeralSystem::new(vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+let bibi = bibicode::NumeralSystem::new(vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"))).unwrap();
+let coder = bibicode::BibiCoder::new(dec, bibi);
+let test = coder.swap("2000").unwrap();
+assert_eq!(test, "BIDAHO");
 
-       let bibi = bibicode::NumeralSystem::new(vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
-       let dec = bibicode::NumeralSystem::new(vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-       let coder = bibicode::BibiCoder::new(dec, bibi);
-       let test = coder.swap("2000").unwrap();
-       assert_eq!(test, "BIDAHO");
+let bibi = bibicode::NumeralSystem::new(vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
+let dec = bibicode::NumeralSystem::new(vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+let coder = bibicode::BibiCoder::new(dec, bibi);
+let test = coder.swap("2000").unwrap();
+assert_eq!(test, "BIDAHO");
+```
 
 ### Example : using application
 
