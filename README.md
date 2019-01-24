@@ -27,48 +27,48 @@ assert_eq!(test, "BIDAHO");
 ### Example : using application
 
 ```bash
-       $ bibicode 1111111111111111 -f bin -t hex
-       ffff
+$ bibicode 1111111111111111 -f bin -t hex
+ffff
 
-       $ bibicode ffff -t bin -f hex
-       1111111111111111
+$ bibicode ffff -t bin -f hex
+1111111111111111
 
-       $ bibicode ffffffffffffffffffffffffffffffff -t dec -f hex
-       340282366920938463463374607431768211455
+$ bibicode ffffffffffffffffffffffffffffffff -t dec -f hex
+340282366920938463463374607431768211455
 
-       $ bibicode 340282366920938463463374607431768211455 -f dec -t hex
-       ffffffffffffffffffffffffffffffff
+$ bibicode 340282366920938463463374607431768211455 -f dec -t hex
+ffffffffffffffffffffffffffffffff
 
-       $ cat > /tmp/bibi.txt
-       H
-       B
-       K
-       D
-       ===
-       A
-       E
-       I
-       O
+$ cat > /tmp/bibi.txt
+H
+B
+K
+D
+===
+A
+E
+I
+O
 
-       $ bibicode 340282366920938463463374607431768211455 -f dec -t /tmp/bibi.txt
-       DODODODODODODODODODODODODODODODODODODODODODODODODODODODODODODODO
+$ bibicode 340282366920938463463374607431768211455 -f dec -t /tmp/bibi.txt
+DODODODODODODODODODODODODODODODODODODODODODODODODODODODODODODODO
 
-       $ cat > /tmp/bibi2.txt
-       H
-       B
-       K
-       D
-       ===
-       A.
-       E.
-       I.
-       O.
+$ cat > /tmp/bibi2.txt
+H
+B
+K
+D
+===
+A.
+E.
+I.
+O.
 
-       $ bibicode 5454366920938463463375407431768211455 -f dec -t /tmp/bibi2.txt
-       BA.HE.KI.BO.KE.HA.DE.HO.KE.DO.DI.DE.KE.KA.BA.KA.HE.DO.BI.DE.DA.BI.HA.KA.HO.DE.HE.DO.DO.DO.DO.
+$ bibicode 5454366920938463463375407431768211455 -f dec -t /tmp/bibi2.txt
+BA.HE.KI.BO.KE.HA.DE.HO.KE.DO.DI.DE.KE.KA.BA.KA.HE.DO.BI.DE.DA.BI.HA.KA.HO.DE.HE.DO.DO.DO.DO.
 
-       $ bibicode 5454366920938463463375407431768211455 -f dec -t utf8
-       ■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢
+$ bibicode 5454366920938463463375407431768211455 -f dec -t utf8
+■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢
 ```
 
 
