@@ -26,6 +26,7 @@ assert_eq!(test, "BIDAHO");
 
 ### Example : using application
 
+```bash
        $ bibicode 1111111111111111 -f bin -t hex
        ffff
 
@@ -68,6 +69,7 @@ assert_eq!(test, "BIDAHO");
 
        $ bibicode 5454366920938463463375407431768211455 -f dec -t utf8
        ■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢
+```
 
 
 
