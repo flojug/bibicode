@@ -12,7 +12,7 @@ extern crate bibicode;
 use bibicode::{NumeralSystem, BibiCoder, BibiError};
 
 
-fn num_from_path<'a>(path: &str) -> Result<NumeralSystem, BibiError> {
+fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
 
     match File::open(path) {
         Ok(file) => file,
