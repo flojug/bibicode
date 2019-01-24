@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["BibiError",""]],"struct":[["BibiCoder","Convert any number from one numeral system to the other."],["NumeralSystem","Define a numeral system by enumerating all the digits. The first digit is zero. The radix is equal to the number of digits. One digit can have any number of characters but all digits must have the same length."]]});

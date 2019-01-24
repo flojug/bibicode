@@ -1,0 +1,45 @@
+name: bibicode
+version: "0.1"
+about: |
+    This application allows the conversion of any integer from one representation (a numeral system) to another. A numeral system is represented by its digits which can be any combination of UTF-8 chars. For example, "0", "1" will represent binary.
+
+after_help: |+
+    The following numeral systems are pre-integrated into the application and can be used :
+      - dec for decimal
+      - hex for hexadecimal
+      - bin for binay
+      - bitcoin for base 52 used in bitcoin address representation
+      - bibi for bibi-binary as defined by Boby Lapointe, the inspirator of this application
+      - budu for an experimental numeral system which is well readable
+      - utf8 for an experimental numeral system which is a combination of serveral utf8 symbols
+
+    Numeral systems can also be described by a file in which each newline represents a new digit. All the digits must have the same length. The following string "===" can be used in file as a digit separator to allow the combination of characters. Zero is the first digit in the file.
+
+    Example 1 : representation of binary in a file
+    0\n1\n
+
+    Example 2 : bibi system
+    HO\nHA\nHE\nHI\nBO\nBA\nBE\nBI\nKO\nKA\nKE\nKI\nDO\nDA\nDE\nDI\n
+    Which can also be represented as
+    H\nB\nK\nD\n===\nO\nA\nE\nI\n
+
+author: Jugla F.
+
+args:
+    - INPUT_NUMBER:
+        help: input integer to be converted, no limitation in length
+        required: true
+        index: 1
+    - from:
+        short: f
+        long: from
+        value_name: NUMERAL_SYSTEM or FILE
+        help: Numeral system of the input integer. Defaults to dec (decimal).
+        takes_value: true
+    - to:
+        short: t
+        long: to
+        value_name: NUMERAL_SYSTEM or FILE
+        help: Numeral system in which input integer must be translated to. Defaults to dec (decimal).
+        takes_value: true
+
