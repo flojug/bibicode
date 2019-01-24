@@ -6,7 +6,7 @@ Any integer (of any length) can then be converted from one system to the other a
 This library uses an extension of double dabble algorithm (and reverse double dabble) to convert numbers. Binary is used as a pivot radix.
 It was named after french singer (and also mathematician) [Boby Lapointe](https://en.wikipedia.org/wiki/Boby_Lapointe) who invented the [Bibi-binary system](https://en.wikipedia.org/wiki/Bibi-binary) in 1968.
 
-### Example : code using crate
+### Example : using crate
 
 ```rust
 extern crate bibicode;
@@ -26,7 +26,7 @@ assert_eq!(test, "BIDAHO");
 
 ### Example : using application
 
-```bash
+```shell
 $ bibicode 1111111111111111 -f bin -t hex
 ffff
 
