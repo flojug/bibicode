@@ -1,6 +1,6 @@
 [package]
 name = "bibicode"
-version = "0.1.2"
+version = "0.1.4"
 authors = ["Florent Jugla <florent@jugla.name>"]
 license = "MIT"
 description = "A crate to convert any integer from one numeral system to another."
