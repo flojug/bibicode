@@ -1,5 +1,5 @@
 
-A crate and and app to convert any integer from one numeral system to another.
+A crate and an app to convert any integer from one numeral system to another.
 
 Two numeral systems must be defined : one for the input number and one for the output.
 Any integer (of any length) can then be converted from one system to the other and vice-versa.
