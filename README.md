@@ -26,7 +26,7 @@ assert_eq!(test, "BIDAHO");
 
 ### Example : using application
 
-```bash
+```shell
 $ bibicode 1111111111111111 -f bin -t hex
 ffff
 
