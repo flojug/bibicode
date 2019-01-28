@@ -1,12 +1,13 @@
 [package]
 name = "bibicode"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Florent Jugla <florent@jugla.name>"]
 license = "MIT"
 description = "A crate to convert any integer from one numeral system to another."
 readme="README.md"
 repository = "https://github.com/flojug/bibicode"
 categories = ["algorithms", "encoding"]
+exclude = ["src/main.rs", "doc", "target"]
 
 [dependencies]
 clap = { version = "2.32.0", features = ["yaml"] }
