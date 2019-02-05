@@ -41,7 +41,7 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
     }
     entry.push(digits);
 
-    NumeralSystem::new_from_strings(entry)
+    NumeralSystem::new_from_strings(String::from(""), entry)
 }
 
 
@@ -80,6 +80,18 @@ fn main() {
             return;
         }
     };
+
+    // let serialized = serde_json::to_string(&to).unwrap();
+    // println!("serialized = {}", serialized);
+
+
+    // let test = String::from(r#"
+    //     {"len_digit":1,
+    //     "digits":["0",
+    //         "1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"]}
+    //     "#);
+    // let test2: NumeralSystem = serde_json::from_str(&test).unwrap();
+
 
     let input_number = matches.value_of("INPUT_NUMBER").unwrap();
 
