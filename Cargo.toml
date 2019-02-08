@@ -1,6 +1,6 @@
 [package]
 name = "bibicode"
-version = "0.1.5"
+version = "0.2.0"
 authors = ["Florent Jugla <florent@jugla.name>"]
 license = "MIT"
 description = "A crate to convert any integer from one numeral system to another."
@@ -10,3 +10,6 @@ categories = ["algorithms", "encoding"]
 
 [dependencies]
 clap = { version = "2.32.0", features = ["yaml"] }
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"

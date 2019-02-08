@@ -12,7 +12,7 @@
 //!
 //! Any integer (of any length) can then be converted from one system to the other and vice-versa.
 //!
-//! This library uses an extension of double dabble algorithm (and reverse double dabble) to convert numbers. Binary is used as a pivot radix. This method was described here : [Convert binary number to any base](https://www.edn.com/design/systems-design/4460458/Convert-binary-number-to-any-base).
+//! This library uses an extension of shift-adjust algorithm (and reversed shift-adjust) to convert numbers. Binary is used as a pivot radix. This method was described here : [Convert binary number to any base](https://www.edn.com/design/systems-design/4460458/Convert-binary-number-to-any-base).
 //!
 //! It was named after french singer (and also mathematician) [Boby Lapointe](https://en.wikipedia.org/wiki/Boby_Lapointe) who invented the [Bibi-binary system](https://en.wikipedia.org/wiki/Bibi-binary) in 1968.
 //!
@@ -53,13 +53,13 @@
 
 
 use std::fmt;
-use std::f64;
+use std::char;
 
 extern crate serde_derive;
 use serde_derive::{Serialize, Deserialize};
 
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum BibiError {
     /// Malformed numeral system : all digits must have the same length and be unique
     BadNumeralSystem,
@@ -161,6 +161,7 @@ impl NumeralSystem {
     /// - utf8 for a test system with UTF8 characters
     /// - base58 for base58 as used in bitcoin
     pub fn new_from_tag(tag: &str) -> Result<NumeralSystem, BibiError> {
+        let chin_factory = ||->Vec<Vec<String>> {let mut ret: Vec<Vec<String>> = vec!(vec!());  for x in 0x3400..0x4000 { ret[0].push(char::from_u32(x).unwrap().to_string()); }; ret};
         match tag {
             "bin" => NumeralSystem::new("0b", vec!(vec!("0", "1"))),
             "oct" => NumeralSystem::new("0o", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7"))),
@@ -170,9 +171,13 @@ impl NumeralSystem {
             "budu" => NumeralSystem::new("", vec!(vec!("B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"), vec!("a", "i","o","u") )),
             "utf8" => NumeralSystem::new("", vec!(vec!("\u{25a0}", "\u{25c0}", "\u{25cf}", "\u{2660}", "\u{2665}", "\u{2666}", "\u{2663}", "\u{2691}", "\u{25c6}", "\u{2605}"), vec!("\u{25a1}", "\u{25c1}", "\u{25cb}", "\u{2664}", "\u{2661}", "\u{2662}", "\u{2667}", "\u{2690}", "\u{25c7}", "\u{2606}"))),
             "base58" => NumeralSystem::new("", vec!(vec!("1","2","3","4","5","6","7","8","9","A","B","C","D","E","F","G","H","J","K","L","M","N","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","m","n","o","p","q","r","s","t","u","v","w","x","y","z"))),
+            "chin" => NumeralSystem::new_from_strings(String::from(""), chin_factory()),
             _ => Err(BibiError::BadTagNumeralSystem),
         }
     }
+
+    // let mut ret: Vec<String> = vec!();  for x in 0x3400..0x4000 { ret.push(char::from_u32(x).unwrap().to_string()); }; ret
+    // NumeralSystem::from_strings(ret).unwrap()
 
     /// Returns the digit at the position usize
     pub fn get_digit(&self, which: usize) -> Option<String> {
@@ -202,166 +207,6 @@ impl fmt::Display for NumeralSystem {
 }
 
 
-#[derive(Debug)]
-struct BCDLike {
-    len_bits: usize,
-    len_nibble: usize,
-    nibbles: Vec<bool>
-}
-
-impl BCDLike {
-    fn new(len: usize) -> BCDLike {
-        BCDLike { len_nibble: len, nibbles: vec!(), len_bits: 0 }
-    }
-
-    // push most significant bit
-    fn push_msb(&mut self, new_bit: bool) {
-        self.nibbles.insert(0, new_bit);
-        self.len_bits = self.len_bits + 1;
-    }
-
-    // push least significant bit
-    fn push_lsb(&mut self, new_bit: bool) {
-        self.nibbles.push(new_bit);
-        self.len_bits = self.len_bits + 1;
-    }
-
-    fn shift_lsb(&mut self) -> bool {
-        self.len_bits = self.len_bits - 1;
-        self.nibbles.pop().unwrap()
-    }
-
-    fn shift_msb(&mut self) -> bool {
-        self.len_bits = self.len_bits - 1;
-        self.nibbles.remove(0)
-    }
-
-    fn get_nb_nibbles(&self) -> usize {
-        let rel = if self.len_bits % self.len_nibble > 0 {1} else {0};
-        (self.len_bits / self.len_nibble) + rel
-    }
-
-    fn add_nibble(&mut self, which: usize) {
-        let nb_bits = (which + 1) * self.len_nibble;
-        if nb_bits > self.len_bits {
-            for _ in self.len_bits..nb_bits {
-                self.push_lsb(false);
-            }
-        }
-    }
-
-    fn set_val_to_nibble(&mut self, which: usize, val: u32, extend: bool) {
-        if extend {
-            self.add_nibble(which);
-        }
-        let pos = which * self.len_nibble;
-        let mut digidx = val;
-        for idx in (0..self.len_nibble).rev() {
-            if pos+idx < self.len_bits {
-                self.nibbles[pos+idx] = if (digidx%2) == 0 {false} else {true};
-            }
-            digidx = digidx / 2;
-        }
-    }
-
-    fn get_val_from_nibble(&mut self, which: usize) -> u32 {
-        let pos = which * self.len_nibble;
-        let mut pow = 1;
-        let mut val = 0;
-        for idx in (0..self.len_nibble).rev() {
-            if pos+idx < self.len_bits {
-                val = val + if self.nibbles[pos+idx] {pow} else {0};
-            }
-            pow = pow * 2;
-        }
-        val
-    }
-
-    fn adjust(&mut self, ceil: u32, inc: u32) {
-        let rel = self.len_nibble - (self.len_bits % self.len_nibble);
-        for _ in 0..rel {
-            self.push_msb(false);
-        }
-        for idx in (0..self.get_nb_nibbles()).rev() {
-            let mut val = self.get_val_from_nibble(idx);
-            if val >= ceil {
-                val = val + inc;
-                self.set_val_to_nibble(idx, val, false);
-            }
-        }
-        for _ in 0..rel {
-            let val = self.shift_msb();
-            if val {
-                self.push_msb(true);
-                break;
-            }
-        }
-    }
-
-    fn rev_adjust(&mut self, ceil: u32, inc: u32) {
-        let rel = self.len_nibble - (self.len_bits % self.len_nibble);
-        for _ in 0..rel {
-            self.push_msb(false);
-        }
-        for idx in 0..self.get_nb_nibbles() {
-            let mut val = self.get_val_from_nibble(idx);
-            if val >= ceil + inc {
-                val = val - inc;
-                self.set_val_to_nibble(idx, val, false);
-            }
-        }
-        for _ in 0..rel {
-            self.shift_msb();
-        }
-    }
-}
-
-impl fmt::Display for BCDLike {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut disp = String::from("[");
-        let mut print = self.nibbles.clone();
-        let rel = self.len_nibble - (self.len_bits % self.len_nibble);
-        for _ in 0..rel {
-            print.insert(0, false);
-        }
-        for idx in 0..print.len() {
-            if (idx>0) && (idx%self.len_nibble==0) {
-                disp = disp + &String::from("][");
-            }
-            disp = disp + (if print[idx] {"1"} else {"0"});
-        }
-        disp = disp + &String::from("]");
-        write!(f, "{}", disp)
-    }
-}
-
-#[derive(Debug)]
-struct BinaryNumber {
-    digits: BCDLike
-}
-
-impl BinaryNumber {
-
-    fn new() -> BinaryNumber {
-        BinaryNumber { digits: BCDLike::new(1) }
-    }
-
-    fn push_msb(&mut self, new_bit: bool) {
-        self.digits.push_msb(new_bit)
-    }
-
-    fn shift_msb(&mut self) -> bool {
-        self.digits.shift_msb()
-    }
-
-}
-
-impl fmt::Display for BinaryNumber {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.digits)
-    }
-}
-
 
 /// Convert any number from one numeral system to the other.
 #[derive(Debug)]
@@ -379,12 +224,12 @@ impl BibiCoder
 
     /// Swap an integer coded in numsys_in system to numsys_out
     pub fn swap(&self, entry: &str) -> Result<String, BibiError> {
-        let pivot: BinaryNumber = self.elbbad_elduob(entry)?;
-        self.double_dabble(pivot)
+        let pivot = self.tsujda_tfihs(entry)?;
+        self.shift_adjust(pivot)
     }
 
     // compute BCD like numbers into binary
-    fn elbbad_elduob(&self, entry: &str) -> Result<BinaryNumber, BibiError> {
+    fn tsujda_tfihs(&self, entry: &str) -> Result<Vec<bool>, BibiError> {
 
         // erase the prefix if present
         let rel_entry: &str;
@@ -395,14 +240,9 @@ impl BibiCoder
         }
 
         let radix = self.numsys_in.len() as u32;
-        //println!("radix {:?}", radix);
-        let radix_f64 = radix as f64;
 
-        let len_nibble = radix_f64.log2().ceil() as usize;
-        //println!("len_nibble {:?}", len_nibble);
-        let mut bcd_like = BCDLike::new(len_nibble);
-
-        let mut pivot = BinaryNumber::new();
+        let mut bcd: Vec<u32> = vec!();
+        let mut pivot: Vec<bool> = vec!();
 
         // compute nibbles from the entry
         for i in 0..(rel_entry.len()/self.numsys_in.len_digit) {
@@ -415,52 +255,61 @@ impl BibiCoder
                 None => return Err(BibiError::EntryMismatchWithNumeralSystem),
                 Some(index) => digidx = index as u32,
             }
-            bcd_like.set_val_to_nibble(i, digidx, true);
+            bcd.push(digidx);
         }
-        // compute binary from nibbles
-        // reversed double dabble
-        let ceil_value = (radix_f64 / 2.0).ceil() as u32;
-        let inc = ((2 as u32).pow(len_nibble as u32) - radix) / 2;
 
-        while bcd_like.len_bits > 0 {
-            let bit = bcd_like.shift_lsb();
-            pivot.push_msb(bit);
-            bcd_like.rev_adjust(ceil_value, inc);
+        loop {
+            let mut end = true;
+            let mut rel = 0;
+            for idx in 0..bcd.len() {
+                let nb = bcd[idx] + rel*radix;
+                rel = nb % 2;
+                bcd[idx] = nb / 2;
+                end = if bcd[idx]>0 {false} else {end};
+            }
+            pivot.insert(0, if rel==1 {true} else {false});
+            if end {
+                break;
+            }
         }
 
         Ok(pivot)
     }
 
+
     // compute  binary numbers into BCD like
-    fn double_dabble(&self, mut pivot: BinaryNumber) -> Result<String, BibiError> {
+    fn shift_adjust(&self, mut pivot: Vec<bool>) -> Result<String, BibiError> {
+
         let radix = self.numsys_out.len() as u32;
-        let radix_f64 = radix as f64;
-        let len_nibble = radix_f64.log2().ceil() as usize;
-        let mut bcd_like = BCDLike::new(len_nibble);
 
-        let ceil_value = (radix_f64 / 2.0).ceil() as u32;
-        let inc = ((2 as u32).pow(len_nibble as u32) - radix) / 2;
-        let len_bits = pivot.digits.len_bits;
+        let len_bits = pivot.len();
+        let mut bcdlike: Vec<u32> = vec!(0);
+
         for _ in 0..len_bits {
-            bcd_like.adjust(ceil_value, inc);
-            let bit = pivot.shift_msb();
-            bcd_like.push_lsb(bit);
-        }
-        let mut ret = self.numsys_out.prefix.clone();
-        let mut begin = true;
 
-        let rel = bcd_like.len_nibble - (bcd_like.len_bits % bcd_like.len_nibble);
-        for _ in 0..rel {
-            bcd_like.push_msb(false);
-        }
+            // shift
+            let bit = pivot.remove(0);
+            let mut rel =  if bit {1} else {0};
 
-        for idx in 0..bcd_like.get_nb_nibbles() {
-            let val = bcd_like.get_val_from_nibble(idx) as usize;
-             if begin && (val==0) {
-                continue;
+            // adjust
+            for idx in 0..bcdlike.len() {
+                let mut val = (bcdlike[idx]*2) + rel;
+                rel = 0;
+                if val>=radix {
+                    val = val-radix;
+                    rel = 1;
+                }
+                bcdlike[idx] = val;
             }
-            begin =false;
-            ret = ret + &self.numsys_out.get_digit(val).unwrap();
+            if rel==1 {
+                bcdlike.push(rel);
+            }
+        }
+
+        let mut ret = self.numsys_out.prefix.clone();
+        for idx in (0..bcdlike.len()).rev() {
+            let val = bcdlike[idx];
+            ret = ret + &self.numsys_out.get_digit(val as usize).unwrap();
         }
 
         Ok(ret)

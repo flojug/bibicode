@@ -27,9 +27,10 @@ author: Jugla F.
 
 args:
     - INPUT_NUMBER:
-        help: input integer to be converted, no limitation in length
+        help: input integer to be converted, no limitation in length. Several numbers can be given.
         required: true
         index: 1
+        multiple: true
     - from:
         short: f
         long: from

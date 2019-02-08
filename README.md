@@ -2,70 +2,76 @@
 A crate and an app to convert any integer from one numeral system to another.
 
 Two numeral systems must be defined : one for the input number and one for the output.
+
 Any integer (of any length) can then be converted from one system to the other and vice-versa.
-This library uses an extension of double dabble algorithm (and reverse double dabble) to convert numbers. Binary is used as a pivot radix.
-It was named after french singer (and also mathematician) [Boby Lapointe](https://en.wikipedia.org/wiki/Boby_Lapointe) who invented the [Bibi-binary system](https://en.wikipedia.org/wiki/Bibi-binary) in 1968.
 
-### Example : using crate
+This library uses shift-adjust algorithm (and reversed shift-adjust) to convert numbers. Binary is used as a pivot radix. This method was described here : [Convert binary number to any base](https://www.edn.com/design/systems-design/4460458/Convert-binary-number-to-any-base).
 
+It was named after french singer (and also mathematician) [Boby Lapointe](https://en.wikipedia.org/wiki/Boby_Lapointe) who invented the [Bibi-binary system](s://en.wikipedia.org/wiki/Bibi-binary) in 1968.
+
+## Exemple
 ```rust
-extern crate bibicode;
+       extern crate bibicode;
 
-let dec = bibicode::NumeralSystem::new(vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-let bibi = bibicode::NumeralSystem::new(vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"))).unwrap();
-let coder = bibicode::BibiCoder::new(dec, bibi);
-let test = coder.swap("2000").unwrap();
-assert_eq!(test, "BIDAHO");
+       let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+       let bibi = bibicode::NumeralSystem::new("", vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", ))).unwrap();
+       let coder = bibicode::BibiCoder::new(dec, bibi);
+       let test = coder.swap("2000").unwrap();
+       assert_eq!(test, "BIDAHO");
 
-let bibi = bibicode::NumeralSystem::new(vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
-let dec = bibicode::NumeralSystem::new(vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-let coder = bibicode::BibiCoder::new(dec, bibi);
-let test = coder.swap("2000").unwrap();
-assert_eq!(test, "BIDAHO");
+       let bibi = bibicode::NumeralSystem::new("", vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
+       let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+       let coder = bibicode::BibiCoder::new(dec, bibi);
+       let test = coder.swap("2000").unwrap();
+       assert_eq!(test, "BIDAHO");
+
+       // with prefixed numeral system
+       let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+       let hex = bibicode::NumeralSystem::new("0x", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"))).unwrap();
+       let coder = bibicode::BibiCoder::new(dec, hex);
+       let test = coder.swap("2000").unwrap();
+       assert_eq!(test, "0x7d0");
+
+       let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+       let hex = bibicode::NumeralSystem::new("0x", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"))).unwrap();
+       let coder = bibicode::BibiCoder::new(hex, dec);
+       let test = coder.swap("0x7d0").unwrap();
+       assert_eq!(test, "2000");
+
+       // will also work
+       let test = coder.swap("7d0").unwrap();
+       assert_eq!(test, "2000");
+
 ```
 
 ### Example : using application
 
 ```shell
 $ bibicode 1111111111111111 -f bin -t hex
-ffff
+0xffff
 
 $ bibicode ffff -t bin -f hex
-1111111111111111
+0b1111111111111111
 
 $ bibicode ffffffffffffffffffffffffffffffff -t dec -f hex
 340282366920938463463374607431768211455
 
 $ bibicode 340282366920938463463374607431768211455 -f dec -t hex
-ffffffffffffffffffffffffffffffff
+0xffffffffffffffffffffffffffffffff
 
-$ cat > /tmp/bibi.txt
-H
-B
-K
-D
-===
-A
-E
-I
-O
+$ cat ./examples/bibi.json
+{
+    "prefix":"",
+    "len_digit":2,
+    "digits":["HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"]
+}
 
-$ bibicode 340282366920938463463374607431768211455 -f dec -t /tmp/bibi.txt
-DODODODODODODODODODODODODODODODODODODODODODODODODODODODODODODODO
 
-$ cat > /tmp/bibi2.txt
-H
-B
-K
-D
-===
-A.
-E.
-I.
-O.
+$ bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/bibi.json
+DIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDI
 
-$ bibicode 5454366920938463463375407431768211455 -f dec -t /tmp/bibi2.txt
-BA.HE.KI.BO.KE.HA.DE.HO.KE.DO.DI.DE.KE.KA.BA.KA.HE.DO.BI.DE.DA.BI.HA.KA.HO.DE.HE.DO.DO.DO.DO.
+$ bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/bibi.json
+BOHAKEBIKAHODAHIKADIDEDAKAKOBOKOHADIBEDADOBEHOKOHIDAHADIDIDIDI
 
 $ bibicode 5454366920938463463375407431768211455 -f dec -t utf8
 ■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢

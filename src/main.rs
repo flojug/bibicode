@@ -4,6 +4,7 @@
 extern crate clap;
 use clap::{App};
 
+use std::process;
 use std::fs;
 use std::fs::File;
 use std::path::Path;
@@ -21,9 +22,6 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
         }
     };
 
-    let mut entry: Vec<Vec<String>> = vec!();
-    let mut digits: Vec<String> = vec!();
-
     let contents = match fs::read_to_string(path) {
         Ok(contents) => contents,
         Err(_) => {
@@ -31,17 +29,9 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
         }
     };
 
-    for line in contents.lines() {
-        if line == "===" {
-            entry.push(digits);
-            digits = vec!();
-        } else {
-            digits.push(String::from(line));
-        }
-    }
-    entry.push(digits);
+    let ret: NumeralSystem = serde_json::from_str(&contents).unwrap();
 
-    NumeralSystem::new_from_strings(String::from(""), entry)
+    Ok(ret)
 }
 
 
@@ -51,6 +41,7 @@ fn main() {
     let matches = App::from_yaml(yaml).get_matches();
 
     let mut res;
+
     let strfrom = matches.value_of("from").unwrap_or("dec");
     if Path::new(strfrom).exists() {
         res = num_from_path(strfrom);
@@ -58,11 +49,11 @@ fn main() {
         res = NumeralSystem::new_from_tag(strfrom);
     }
 
-    let from: NumeralSystem;
-    match res {
-        Ok(num) => from = num,
-        Err(_) => {
-            return;
+    let from: NumeralSystem = match res {
+        Ok(numsys) => numsys,
+        Err(err) => {
+            eprintln!("error: {:?}", err);
+            process::exit(1);
         }
     };
 
@@ -73,32 +64,31 @@ fn main() {
         res = NumeralSystem::new_from_tag(strto);
     }
 
-    let to: NumeralSystem;
-    match res {
-        Ok(num) => to = num,
-        Err(_) => {
-            return;
+    let to: NumeralSystem = match res {
+        Ok(numsys) => numsys,
+        Err(err) => {
+            eprintln!("error: {:?}", err);
+            process::exit(1);
         }
     };
 
-    // let serialized = serde_json::to_string(&to).unwrap();
-    // println!("serialized = {}", serialized);
-
-
-    // let test = String::from(r#"
-    //     {"len_digit":1,
-    //     "digits":["0",
-    //         "1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"]}
-    //     "#);
-    // let test2: NumeralSystem = serde_json::from_str(&test).unwrap();
-
-
-    let input_number = matches.value_of("INPUT_NUMBER").unwrap();
+    let input_numbers: Vec<_> = matches.values_of("INPUT_NUMBER").unwrap().collect();
 
     let coder = BibiCoder::new(from, to);
-    let output_number = coder.swap(input_number).unwrap();
-    println!("{}", output_number);
+
+    let mut res = String::from("");
+    for input_number in input_numbers.iter() {
+        let output_number = match coder.swap(input_number) {
+            Ok(on) => on,
+            Err(err) => {
+                eprintln!("error: {:?}", err);
+                process::exit(1);
+            }
+        };
+        res = res + &output_number + &String::from(" ");
+    }
+
+    println!("{}", res);
+    process::exit(0);
 }
-
-
 
