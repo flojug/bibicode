@@ -13,6 +13,23 @@ extern crate bibicode;
 use bibicode::{NumeralSystem, BibiCoder, BibiError};
 
 
+extern crate serde_derive;
+use serde_derive::{Serialize, Deserialize};
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct FakeNumeralSystem {
+    prefix: String,
+    digits: Vec<Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct FakeNumeralSystem2 {
+    prefix: String,
+    digits: Vec<String>,
+}
+
+
 fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
 
     match File::open(path) {
@@ -29,9 +46,17 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
         }
     };
 
-    let ret: NumeralSystem = serde_json::from_str(&contents).unwrap();
-
-    Ok(ret)
+    let test: Result<FakeNumeralSystem, _> = serde_json::from_str(&contents);
+    match test {
+        Ok(fakenum) => return NumeralSystem::new_from_strings(fakenum.prefix, fakenum.digits),
+        Err(_) => {
+            let test: Result<FakeNumeralSystem2, _> = serde_json::from_str(&contents);
+            match test {
+                Ok(fakenum) => return NumeralSystem::new_from_strings(fakenum.prefix, vec!(fakenum.digits)),
+                Err(_) => return Err(BibiError::BadNumeralSystem)
+            }
+        }
+    };
 }
 
 

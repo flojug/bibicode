@@ -1,5 +1,4 @@
 {
     "prefix":"",
-    "len_digit":2,
-    "digits":["HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"]
+    "digits":[["H", "B", "K", "D"],["O", "A", "E", "I"]]
 }

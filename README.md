@@ -11,37 +11,36 @@ It was named after french singer (and also mathematician) [Boby Lapointe](https:
 
 ## Exemple
 ```rust
-       extern crate bibicode;
+extern crate bibicode;
 
-       let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-       let bibi = bibicode::NumeralSystem::new("", vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", ))).unwrap();
-       let coder = bibicode::BibiCoder::new(dec, bibi);
-       let test = coder.swap("2000").unwrap();
-       assert_eq!(test, "BIDAHO");
+let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+let bibi = bibicode::NumeralSystem::new("", vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", ))).unwrap();
+let coder = bibicode::BibiCoder::new(dec, bibi);
+let test = coder.swap("2000").unwrap();
+assert_eq!(test, "BIDAHO");
 
-       let bibi = bibicode::NumeralSystem::new("", vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
-       let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-       let coder = bibicode::BibiCoder::new(dec, bibi);
-       let test = coder.swap("2000").unwrap();
-       assert_eq!(test, "BIDAHO");
+let bibi = bibicode::NumeralSystem::new("", vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
+let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+let coder = bibicode::BibiCoder::new(dec, bibi);
+let test = coder.swap("2000").unwrap();
+assert_eq!(test, "BIDAHO");
 
-       // with prefixed numeral system
-       let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-       let hex = bibicode::NumeralSystem::new("0x", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"))).unwrap();
-       let coder = bibicode::BibiCoder::new(dec, hex);
-       let test = coder.swap("2000").unwrap();
-       assert_eq!(test, "0x7d0");
+// with prefixed numeral system
+let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+let hex = bibicode::NumeralSystem::new("0x", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"))).unwrap();
+let coder = bibicode::BibiCoder::new(dec, hex);
+let test = coder.swap("2000").unwrap();
+assert_eq!(test, "0x7d0");
 
-       let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-       let hex = bibicode::NumeralSystem::new("0x", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"))).unwrap();
-       let coder = bibicode::BibiCoder::new(hex, dec);
-       let test = coder.swap("0x7d0").unwrap();
-       assert_eq!(test, "2000");
+let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
+let hex = bibicode::NumeralSystem::new("0x", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"))).unwrap();
+let coder = bibicode::BibiCoder::new(hex, dec);
+let test = coder.swap("0x7d0").unwrap();
+assert_eq!(test, "2000");
 
-       // will also work
-       let test = coder.swap("7d0").unwrap();
-       assert_eq!(test, "2000");
-
+// will also work
+let test = coder.swap("7d0").unwrap();
+assert_eq!(test, "2000");
 ```
 
 ### Example : using application

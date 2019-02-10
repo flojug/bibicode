@@ -50,16 +50,11 @@
 //!        assert_eq!(test, "2000");
 
 
-
-
 use std::fmt;
 use std::char;
 
-extern crate serde_derive;
-use serde_derive::{Serialize, Deserialize};
 
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub enum BibiError {
     /// Malformed numeral system : all digits must have the same length and be unique
     BadNumeralSystem,
@@ -71,7 +66,7 @@ pub enum BibiError {
 
 
 /// Define a numeral system by enumerating all the digits. The first digit is zero. The radix is equal to the number of digits. One digit can have any number of characters but all digits must have the same length.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct NumeralSystem {
     prefix: String,
     len_digit: usize,
@@ -176,9 +171,6 @@ impl NumeralSystem {
         }
     }
 
-    // let mut ret: Vec<String> = vec!();  for x in 0x3400..0x4000 { ret.push(char::from_u32(x).unwrap().to_string()); }; ret
-    // NumeralSystem::from_strings(ret).unwrap()
-
     /// Returns the digit at the position usize
     pub fn get_digit(&self, which: usize) -> Option<String> {
         if which < self.digits.len() {
@@ -228,7 +220,7 @@ impl BibiCoder
         self.shift_adjust(pivot)
     }
 
-    // compute BCD like numbers into binary
+    // compute BCD  numbers into binary
     fn tsujda_tfihs(&self, entry: &str) -> Result<Vec<bool>, BibiError> {
 
         // erase the prefix if present
@@ -244,7 +236,7 @@ impl BibiCoder
         let mut bcd: Vec<u32> = vec!();
         let mut pivot: Vec<bool> = vec!();
 
-        // compute nibbles from the entry
+        // compute bcd numbers from the entry
         for i in 0..(rel_entry.len()/self.numsys_in.len_digit) {
             let digit = String::from(&rel_entry[i*self.numsys_in.len_digit..(i*self.numsys_in.len_digit)+self.numsys_in.len_digit]);
             if !self.numsys_in.digits.contains(&digit) {
