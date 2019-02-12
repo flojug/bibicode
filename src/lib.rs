@@ -53,6 +53,8 @@
 use std::fmt;
 use std::char;
 
+extern crate indexmap;
+use indexmap::map::IndexMap;
 
 #[derive(Debug)]
 pub enum BibiError {
@@ -70,7 +72,9 @@ pub enum BibiError {
 pub struct NumeralSystem {
     prefix: String,
     len_digit: usize,
-    digits: Vec<String>,
+    digits: IndexMap<String, u32>,
+    // maintains reverse list of digits to find them quickly
+    revdigits: IndexMap<u32, String>,
 }
 
 impl NumeralSystem {
@@ -100,8 +104,9 @@ impl NumeralSystem {
     // internal method to build system from vec of vec
     fn new_rec(prefix: &str, entry: &Vec<Vec<&str>>, index: usize) -> Result<NumeralSystem, BibiError> {
 
-        let len_digit;
-        let mut digits: Vec<String> = vec!();
+        let mut len_digit;
+        let mut digits: IndexMap<String, u32> = IndexMap::new();
+        let mut revdigits: IndexMap<u32, String> = IndexMap::new();
 
         let first_entry = &entry[index];
 
@@ -114,36 +119,40 @@ impl NumeralSystem {
             return Err(BibiError::BadNumeralSystem);
         }
 
-        let mut sub_num_sys = NumeralSystem { prefix:String::from(prefix), len_digit: 0, digits: vec!() };
+        let mut sub_num_sys = None;
         if index < entry.len()-1 {
-            sub_num_sys = NumeralSystem::new_rec(prefix, entry, index+1)?;
+            sub_num_sys = Some(NumeralSystem::new_rec(prefix, entry, index+1)?);
         }
 
+        let mut cpt: u32 = 0;
         for digit in first_entry {
             if digit.len() != len_digit {
                 return Err(BibiError::BadNumeralSystem);
             }
-
-            if sub_num_sys.len_digit > 0 {
-                for digit2 in &sub_num_sys.digits[..] {
-                    digits.push(String::from(*digit) + &String::from(&digit2[..]));
+            if let Some(num) = sub_num_sys {
+                for digit2 in num.digits.keys() {
+                    digits.entry(String::from(*digit) + &String::from(&digit2[..])).or_insert(cpt);
+                    revdigits.insert(cpt, String::from(*digit) + &String::from(&digit2[..]));
+                    cpt = cpt + 1;
                 }
+                sub_num_sys = Some(num);
             } else {
-                digits.push(String::from(*digit));
+                digits.entry(String::from(*digit)).or_insert(cpt);
+                revdigits.insert(cpt, String::from(*digit));
+                cpt = cpt + 1;
             }
         }
 
         // check for unique digits
-        let mut compdigs = digits.clone();
-        compdigs.sort();
-        let len1 = compdigs.len();
-        compdigs.dedup();
-        let len2 = compdigs.len();
-        if len1 != len2 {
+        if cpt != digits.len() as u32 {
             return Err(BibiError::BadNumeralSystem);
         }
 
-        Ok(NumeralSystem { prefix: String::from(prefix), len_digit: len_digit + sub_num_sys.len_digit, digits: digits })
+        if let Some(num) = sub_num_sys {
+            len_digit = len_digit + num.len_digit;
+        }
+
+        Ok(NumeralSystem { prefix: String::from(prefix), len_digit: len_digit, digits: digits, revdigits: revdigits })
     }
 
 
@@ -171,13 +180,6 @@ impl NumeralSystem {
         }
     }
 
-    /// Returns the digit at the position usize
-    pub fn get_digit(&self, which: usize) -> Option<String> {
-        if which < self.digits.len() {
-            return Some(self.digits[which].clone());
-        }
-        None
-    }
 
     /// Returns the legth of a digit (all digits have the same length)
     pub fn len(&self) -> usize { self.digits.len() }
@@ -190,8 +192,8 @@ impl fmt::Display for NumeralSystem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut disp = String::from("");
         let mut sep = String::from("");
-        for digit in self.digits.iter() {
-            disp = disp + &sep + &digit;
+        for digit in self.digits.keys() {
+            disp = disp + &sep + digit;
             sep = String::from(", ");
         }
         write!(f, "{}", disp)
@@ -239,17 +241,14 @@ impl BibiCoder
         // compute bcd numbers from the entry
         for i in 0..(rel_entry.len()/self.numsys_in.len_digit) {
             let digit = String::from(&rel_entry[i*self.numsys_in.len_digit..(i*self.numsys_in.len_digit)+self.numsys_in.len_digit]);
-            if !self.numsys_in.digits.contains(&digit) {
-                return Err(BibiError::EntryMismatchWithNumeralSystem);
-            }
-            let mut digidx: u32;
-            match self.numsys_in.digits.iter().position(|digit_in_numsys| &digit == digit_in_numsys) {
-                None => return Err(BibiError::EntryMismatchWithNumeralSystem),
-                Some(index) => digidx = index as u32,
-            }
+            let digidx: u32 = match self.numsys_in.digits.get(&digit) {
+                Some(d) => *d,
+                None => return Err(BibiError::EntryMismatchWithNumeralSystem)
+            };
             bcd.push(digidx);
         }
 
+        // reverse shift adjust
         loop {
             let mut end = true;
             let mut rel = 0;
@@ -287,7 +286,7 @@ impl BibiCoder
             for idx in 0..bcdlike.len() {
                 let mut val = (bcdlike[idx]*2) + rel;
                 rel = 0;
-                if val>=radix {
+                if val >= radix {
                     val = val-radix;
                     rel = 1;
                 }
@@ -301,7 +300,7 @@ impl BibiCoder
         let mut ret = self.numsys_out.prefix.clone();
         for idx in (0..bcdlike.len()).rev() {
             let val = bcdlike[idx];
-            ret = ret + &self.numsys_out.get_digit(val as usize).unwrap();
+            ret = ret + self.numsys_out.revdigits.get(&val).unwrap();
         }
 
         Ok(ret)
@@ -317,23 +316,23 @@ mod tests {
     fn test_numeral_system() {
 
         let test = NumeralSystem::new("", vec!(vec!("0", "1", "2", "2")));
-        assert!(test.is_err(), "Test if double digit in the same entry forbidden.");
+        assert!(test.is_err(), "test 1 1");
 
         let test = NumeralSystem::new("", vec!(vec!("0", "1", "2", "22")));
-        assert!(test.is_err(), "Test if digits with different length forbidden.");
+        assert!(test.is_err(), "test 1 2");
 
         let test = NumeralSystem::new("", vec!(vec!("0", "1", "2"), vec!("0", "1", "2", "22")));
-        assert!(test.is_err(), "Test if digits with different length forbidden.");
+        assert!(test.is_err(), "test 1 3");
 
         let test = NumeralSystem::new("", vec!(vec!("0", "1", "2"), vec!("0", "1", "2", "2")));
-        assert!(test.is_err(), "Test if digits with same length OK");
+        assert!(test.is_err(), "test 1 4");
 
         let a = vec!("B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z");
         let b = vec!("a", "i","o","u");
         let len1 = a.len() * b.len();
         let test = NumeralSystem::new("", vec!(a, b)).unwrap();
         let len2 = test.digits.len();
-        assert!(len1==len2, "Test size of numeral system");
+        assert!(len1==len2, "test 1 5");
     }
 
     #[test]
@@ -345,11 +344,11 @@ mod tests {
         let dec_to_bibi = BibiCoder::new(dec, bibi);
 
         let test = dec_to_bibi.swap("2000").unwrap();
-        assert_eq!(test, "BIDAHO", "test conversion");
+        assert_eq!(test, "BIDAHO", "test 2 1");
 
         //let bibi = NumeralSystem::new("", vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
         let test = dec_to_bibi.swap("2000").unwrap();
-        assert_eq!(test, "BIDAHO", "test conversion");
+        assert_eq!(test, "BIDAHO", "test 2 2");
 
         let bin = NumeralSystem::new_from_tag("bin").unwrap();
         let hex = NumeralSystem::new_from_tag("hex").unwrap();
@@ -365,32 +364,34 @@ mod tests {
         let hex_to_bin = BibiCoder::new(hex, bin);
 
         let test = hex_to_dec.swap("ffff").unwrap();
-        assert_eq!(test, "65535", "test conversion");
+        assert_eq!(test, "65535", "test 2 3");
 
         let test = hex_to_bin.swap("f0ff").unwrap();
-        assert_eq!(test, "0b1111000011111111", "test conversion");
+        assert_eq!(test, "0b1111000011111111", "test 2 4");
 
         let test = dec_to_hex.swap("324439924324324235436544328757654635345424324543").unwrap();
-        assert_eq!(test, "0x38d463ad8fa67a74d6e9a610158623c60d2297bf", "test conversion");
+        assert_eq!(test, "0x38d463ad8fa67a74d6e9a610158623c60d2297bf", "test 2 5");
+
+        let test = dec_to_hex.swap("45641230").unwrap();
+        assert_eq!(test, "0x2b86e0e", "test 2 6");
 
         let test = hex_to_dec.swap("38d463ad8fa67a74d6e9a610158623c60d2297bf").unwrap();
-        assert_eq!(test, "324439924324324235436544328757654635345424324543", "test conversion");
+        assert_eq!(test, "324439924324324235436544328757654635345424324543", "test 2 7");
 
         let sys = NumeralSystem::new("", vec!(vec!("B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"), vec!("a-", "i-","o-","u-"))).unwrap();
-
         let hex = NumeralSystem::new_from_tag("hex").unwrap();
         let hex_to_sys = BibiCoder::new(hex, sys);
         let test = hex_to_sys.swap("de0b295669a9fd93d5f28d9ec85e40f4cb697bae").unwrap();
         let test2 = hex_to_sys.swap("0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae").unwrap();
 
-        assert_eq!(test, "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-");
-        assert_eq!(test2, "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-");
+        assert_eq!(test, "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-", "test 2 8");
+        assert_eq!(test2, "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-", "test 2 9");
 
         let sys = NumeralSystem::new("", vec!(vec!("B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"), vec!("a-", "i-","o-","u-"))).unwrap();
         let hex = NumeralSystem::new_from_tag("hex").unwrap();
         let sys_to_hex = BibiCoder::new(sys, hex);
         let test = sys_to_hex.swap("Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-").unwrap();
-        assert_eq!(test, "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae");
+        assert_eq!(test, "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae", "test 2 10");
     }
 
     #[test]
@@ -402,12 +403,12 @@ mod tests {
         let bin = NumeralSystem::new_from_tag("dec").unwrap();
 
         let test = NumeralSystem::autodetect("0x4324ae34", vec!(&hex, &dec));
-        assert!(test.is_some());
+        assert!(test.is_some(), "test 3 1");
 
         let test = NumeralSystem::autodetect("0b0101101", vec!(&hex, &dec));
-        assert!(test.is_none());
+        assert!(test.is_none(), "test 3 2");
 
         let test = NumeralSystem::autodetect("0b0101101", vec!(&hex, &dec, &bin));
-        assert!(test.is_none());
+        assert!(test.is_none(), "test 3 3");
     }
 }

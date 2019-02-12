@@ -17,20 +17,20 @@ extern crate serde_derive;
 use serde_derive::{Serialize, Deserialize};
 
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct FakeNumeralSystem {
-    prefix: String,
-    digits: Vec<Vec<String>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct FakeNumeralSystem2 {
-    prefix: String,
-    digits: Vec<String>,
-}
-
 
 fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct FakeNumeralSystem {
+        prefix: String,
+        digits: Vec<Vec<String>>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct FakeNumeralSystem2 {
+        prefix: String,
+        digits: Vec<String>,
+    }
 
     match File::open(path) {
         Ok(file) => file,

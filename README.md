@@ -61,7 +61,6 @@ $ bibicode 340282366920938463463374607431768211455 -f dec -t hex
 $ cat ./examples/bibi.json
 {
     "prefix":"",
-    "len_digit":2,
     "digits":["HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"]
 }
 
