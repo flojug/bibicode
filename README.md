@@ -12,7 +12,7 @@ This library uses shift-adjust algorithm (and reversed shift-adjust) to convert 
 
 It was named after french singer (and also mathematician) [Boby Lapointe](https://en.wikipedia.org/wiki/Boby_Lapointe) who invented the [Bibi-binary system](s://en.wikipedia.org/wiki/Bibi-binary) in 1968.
 
-## Example
+## Example : using crate
 ```rust
 extern crate bibicode;
 
