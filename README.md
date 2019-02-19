@@ -68,6 +68,9 @@ $ cargo build
 $ ./target/debug/bibicode 1111111111111111 -f bin -t hex
 0xffff
 
+./target/debug/bibicode 1111111111111111 100100010100000001 -f bin -t hex
+0xffff 0x24501
+
 $ ./target/debug/bibicode ffff -t bin -f hex
 0b1111111111111111
 
