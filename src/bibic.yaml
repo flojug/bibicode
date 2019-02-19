@@ -13,15 +13,20 @@ after_help: |+
       - budu for an experimental numeral system which is well readable
       - utf8 for an experimental numeral system which is a combination of serveral utf8 symbols
 
-    Numeral systems can also be described by a file in which each newline represents a new digit. All the digits must have the same length. The following string "===" can be used in file as a digit separator to allow the combination of characters. Zero is the first digit in the file.
+    Numeral systems can also be described by a json file
 
     Example 1 : representation of binary in a file
-    0\n1\n
+    {
+        "prefix":"0b",
+        "digits":["0","1"]
+    }
 
     Example 2 : bibi system
-    HO\nHA\nHE\nHI\nBO\nBA\nBE\nBI\nKO\nKA\nKE\nKI\nDO\nDA\nDE\nDI\n
-    Which can also be represented as
-    H\nB\nK\nD\n===\nO\nA\nE\nI\n
+    {
+        "prefix":"",
+        "digits":[["H", "B", "K", "D"],["O", "A", "E", "I"]]
+    }
+
 
 author: Jugla F.
 
