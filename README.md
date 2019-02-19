@@ -16,7 +16,7 @@ The following numeral systems are pre-integrated into the application and can be
 - dec for decimal
 - hex for hexadecimal
 - bin for binay
-- bitcoin for base 52 used in bitcoin address representation
+- base58 for base 58 as used in bitcoin address representation
 - bibi for bibi-binary as defined by Boby Lapointe, the inspirator of this application
 - budu for an experimental numeral system which is well readable
 - utf8 for an experimental numeral system which is a combination of serveral utf8 symbols
