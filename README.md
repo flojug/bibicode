@@ -12,6 +12,17 @@ This library uses shift-adjust algorithm (and reversed shift-adjust) to convert 
 
 It was named after french singer (and also mathematician) [Boby Lapointe](https://en.wikipedia.org/wiki/Boby_Lapointe) who invented the [Bibi-binary system](s://en.wikipedia.org/wiki/Bibi-binary) in 1968.
 
+The following numeral systems are pre-integrated into the application and can be used :
+- dec for decimal
+- hex for hexadecimal
+- bin for binay
+- bitcoin for base 52 used in bitcoin address representation
+- bibi for bibi-binary as defined by Boby Lapointe, the inspirator of this application
+- budu for an experimental numeral system which is well readable
+- utf8 for an experimental numeral system which is a combination of serveral utf8 symbols
+- chin for an experimental numeral system which uses chinses characters
+
+
 ## Example : using crate
 ```rust
 extern crate bibicode;
