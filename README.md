@@ -1,7 +1,10 @@
+# bibicode
 
 A crate and an app to convert any integer from one numeral system to another.
 
-Two numeral systems must be defined : one for the input number and one for the output.
+Two numeral systems must be defined :
+- one for the input number
+- and one for the output.
 
 Any integer (of any length) can then be converted from one system to the other and vice-versa.
 
@@ -9,7 +12,7 @@ This library uses shift-adjust algorithm (and reversed shift-adjust) to convert 
 
 It was named after french singer (and also mathematician) [Boby Lapointe](https://en.wikipedia.org/wiki/Boby_Lapointe) who invented the [Bibi-binary system](s://en.wikipedia.org/wiki/Bibi-binary) in 1968.
 
-## Exemple
+## Example
 ```rust
 extern crate bibicode;
 
@@ -43,19 +46,24 @@ let test = coder.swap("7d0").unwrap();
 assert_eq!(test, "2000");
 ```
 
-### Example : using application
+## Example : using application
+
+Use `cargo run` to build and run the application or `cargo build` to build it in debug mode.
 
 ```shell
-$ bibicode 1111111111111111 -f bin -t hex
+$ cargo build
+...
+
+$ ./target/debug/bibicode 1111111111111111 -f bin -t hex
 0xffff
 
-$ bibicode ffff -t bin -f hex
+$ ./target/debug/bibicode ffff -t bin -f hex
 0b1111111111111111
 
-$ bibicode ffffffffffffffffffffffffffffffff -t dec -f hex
+$ ./target/debug/bibicode ffffffffffffffffffffffffffffffff -t dec -f hex
 340282366920938463463374607431768211455
 
-$ bibicode 340282366920938463463374607431768211455 -f dec -t hex
+$ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t hex
 0xffffffffffffffffffffffffffffffff
 
 $ cat ./examples/bibi.json
@@ -65,16 +73,25 @@ $ cat ./examples/bibi.json
 }
 
 
-$ bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/bibi.json
+$ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/bibi.json
 DIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDI
 
-$ bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/bibi.json
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/bibi.json
 BOHAKEBIKAHODAHIKADIDEDAKAKOBOKOHADIBEDADOBEHOKOHIDAHADIDIDIDI
 
-$ bibicode 5454366920938463463375407431768211455 -f dec -t utf8
+$ cat ./examples/budu.json
+{
+    "prefix":"",
+    "digits":["B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"], ["a", "i","o","u"]
+}
+
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/budu.json
+KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
+
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t utf8
 ■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢
 
-$ bibicode 5454366920938463463375407431768211455 -f dec -t chin
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t chin
 㑈㹨㕫㕃㽃㹼㷶㓱㸿㰪㯿
 ```
 
