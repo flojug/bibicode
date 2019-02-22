@@ -80,12 +80,21 @@ $ ./target/debug/bibicode ffffffffffffffffffffffffffffffff -t dec -f hex
 $ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t hex
 0xffffffffffffffffffffffffffffffff
 
+
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t utf8
+■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢
+
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t chin
+㑈㹨㕫㕃㽃㹼㷶㓱㸿㰪㯿
+```
+
+Numeral System can be represented by a json file :
+
+```shell
 $ cat ./examples/bibi.json
 {
-    "prefix":"",
     "digits":["HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"]
 }
-
 
 $ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/bibi.json
 DIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDI
@@ -95,18 +104,23 @@ BOHAKEBIKAHODAHIKADIDEDAKAKOBOKOHADIBEDADOBEHOKOHIDAHADIDIDIDI
 
 $ cat ./examples/budu.json
 {
-    "prefix":"",
-    "digits":["B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"], ["a", "i","o","u"]
+    "digits": [["B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"], ["a", "i","o","u"]]
 }
 
 $ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/budu.json
 KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
-
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t utf8
-■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢
-
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t chin
-㑈㹨㕫㕃㽃㹼㷶㓱㸿㰪㯿
 ```
 
+A prefix can be used for representing the output number :
+
+```shell
+$ cat ./examples/hex.json
+{
+    "prefix":"0x",
+    "digits":["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"]
+}
+
+$ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/hex.json
+0xffffffffffffffffffffffffffffffff
+```
 

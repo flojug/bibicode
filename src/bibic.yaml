@@ -1,7 +1,6 @@
 name: bibicode
-version: "0.1"
 about: |
-    This application allows the conversion of any integer from one representation (a numeral system) to another. A numeral system is represented by its digits which can be any combination of UTF-8 chars. For example, "0", "1" will represent binary.
+    This application allows the conversion of any integer from one representation (a numeral system) to another. A numeral system is represented by its digits which can be any combination of UTF-8 chars. For example, "0", "1" will represent binary system.
 
 after_help: |+
     The following numeral systems are pre-integrated into the application and can be used :
@@ -21,9 +20,8 @@ after_help: |+
         "digits":["0","1"]
     }
 
-    Example 2 : bibi system
+    Example 2 : bibi-binary system
     {
-        "prefix":"",
         "digits":[["H", "B", "K", "D"],["O", "A", "E", "I"]]
     }
 
@@ -48,4 +46,8 @@ args:
         value_name: NUMERAL_SYSTEM or FILE
         help: Numeral system in which input integer must be translated to. Defaults to dec (decimal).
         takes_value: true
+    - concat:
+        short: c
+        long: concat
+        help: Concat output into one number if serveral input numbers are present.
 

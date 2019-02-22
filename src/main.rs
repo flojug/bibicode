@@ -22,12 +22,14 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct FakeNumeralSystem {
+        #[serde(default)]
         prefix: String,
         digits: Vec<Vec<String>>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct FakeNumeralSystem2 {
+        #[serde(default)]
         prefix: String,
         digits: Vec<String>,
     }
@@ -89,7 +91,7 @@ fn main() {
         res = NumeralSystem::new_from_tag(strto);
     }
 
-    let to: NumeralSystem = match res {
+    let mut to: NumeralSystem = match res {
         Ok(numsys) => numsys,
         Err(err) => {
             eprintln!("error: {:?}", err);
@@ -99,9 +101,15 @@ fn main() {
 
     let input_numbers: Vec<_> = matches.values_of("INPUT_NUMBER").unwrap().collect();
 
+    let mut res = String::from("");
+
+    if matches.is_present("concat") {
+        res = to.get_prefix();
+        to.set_prefix("");
+    }
+
     let coder = BibiCoder::new(from, to);
 
-    let mut res = String::from("");
     for input_number in input_numbers.iter() {
         let output_number = match coder.swap(input_number) {
             Ok(on) => on,
@@ -110,7 +118,11 @@ fn main() {
                 process::exit(1);
             }
         };
-        res = res + &output_number + &String::from(" ");
+        if matches.is_present("concat") {
+            res = res + &output_number;
+        } else {
+            res = res + &output_number + &String::from(" ");
+        }
     }
 
     println!("{}", res);

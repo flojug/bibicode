@@ -186,6 +186,10 @@ impl NumeralSystem {
 
     /// Return the radix of this numeral system (= number of digits in numeral system)
     pub fn radix(&self) -> usize { self.len() }
+
+    pub fn get_prefix(&self) -> String { self.prefix.clone() }
+
+    pub fn set_prefix(&mut self, prefix: &str) { self.prefix = String::from(prefix); }
 }
 
 impl fmt::Display for NumeralSystem {
