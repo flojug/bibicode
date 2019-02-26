@@ -125,7 +125,7 @@ $ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t ./ex
 0xffffffffffffffffffffffffffffffff
 ```
 
-Numeral systems json files can be stored into the XSD directory linked with the application. If so, the numeral system is directly known by bibicode after the name of the json file :
+Numeral systems json files can be stored into the XDG directory linked with the application. If so, the numeral system is directly known by bibicode after the name of the json file :
 
 ```shell
 $ cat ~/.local/share/bibicode/budu2.json
