@@ -4,7 +4,7 @@
 extern crate clap;
 use clap::{App};
 
-use std::process;
+//use std::process;
 use std::fs;
 use std::fs::File;
 use std::path::Path;
@@ -12,11 +12,13 @@ use std::path::Path;
 extern crate bibicode;
 use bibicode::{NumeralSystem, BibiCoder, BibiError};
 
+extern crate xdg;
 
 extern crate serde_derive;
 use serde_derive::{Serialize, Deserialize};
 
-
+extern crate indexmap;
+use indexmap::map::IndexMap;
 
 fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
 
@@ -62,41 +64,56 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
 }
 
 
-fn main() {
+fn main() -> Result<(), BibiError> {
+
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("bibicode").unwrap();
+
+    let json_files = xdg_dirs.list_data_files("");
+    let mut xdg_nums: IndexMap<&str, &str> = IndexMap::new();
+    for json_file in json_files.iter() {
+        let filename = json_file.file_stem();
+        if let Some(num) = filename {
+            xdg_nums.entry(num.to_str().unwrap()).or_insert(json_file.to_str().unwrap());
+        }
+    }
 
     let yaml = load_yaml!("bibic.yaml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    let mut res;
-
-    let strfrom = matches.value_of("from").unwrap_or("dec");
-    if Path::new(strfrom).exists() {
-        res = num_from_path(strfrom);
-    } else {
-        res = NumeralSystem::new_from_tag(strfrom);
-    }
-
-    let from: NumeralSystem = match res {
-        Ok(numsys) => numsys,
-        Err(err) => {
-            eprintln!("error: {:?}", err);
-            process::exit(1);
+    let init_num = |entry: &str| -> Result<NumeralSystem, BibiError> {
+        if Path::new(entry).exists() {
+            match num_from_path(entry) {
+                Ok(num) => return Ok(num),
+                Err(err) => return Err(err),
+            }
+        } else {
+            match NumeralSystem::new_from_tag(entry) {
+                Ok(num) => return Ok(num),
+                Err(_) => {
+                    // try xdgs files
+                    if xdg_nums.contains_key(entry) {
+                        match num_from_path(xdg_nums[entry]) {
+                            Ok(num) => return Ok(num),
+                            Err(err) => return Err(err),
+                        }
+                    } else {
+                        return Err(BibiError::BadNumeralSystem);
+                    }
+                }
+            }
         }
     };
 
-    let strto = matches.value_of("to").unwrap_or("dec");
-    if Path::new(strto).exists() {
-        res = num_from_path(strto);
-    } else {
-        res = NumeralSystem::new_from_tag(strto);
-    }
+    let strfrom = matches.value_of("from").unwrap_or("dec");
+    let from: NumeralSystem = match init_num(strfrom) {
+        Ok(num) => num,
+        Err(err) => return Err(err),
+    };
 
-    let mut to: NumeralSystem = match res {
-        Ok(numsys) => numsys,
-        Err(err) => {
-            eprintln!("error: {:?}", err);
-            process::exit(1);
-        }
+    let strto = matches.value_of("to").unwrap_or("dec");
+    let mut to: NumeralSystem = match init_num(strto) {
+        Ok(num) => num,
+        Err(err) => return Err(err),
     };
 
     let input_numbers: Vec<_> = matches.values_of("INPUT_NUMBER").unwrap().collect();
@@ -114,8 +131,7 @@ fn main() {
         let output_number = match coder.swap(input_number) {
             Ok(on) => on,
             Err(err) => {
-                eprintln!("error: {:?}", err);
-                process::exit(1);
+                return Err(err);
             }
         };
         if matches.is_present("concat") {
@@ -126,6 +142,6 @@ fn main() {
     }
 
     println!("{}", res);
-    process::exit(0);
+    Ok(())
 }
 

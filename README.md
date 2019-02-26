@@ -93,7 +93,8 @@ Numeral System can be represented by a json file :
 ```shell
 $ cat ./examples/bibi.json
 {
-    "digits":["HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"]
+    "digits":["HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO",
+        "KA", "KE", "KI", "DO", "DA", "DE", "DI"]
 }
 
 $ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/bibi.json
@@ -111,7 +112,7 @@ $ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t ./exam
 KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
 ```
 
-A prefix can be used for representing the output number :
+A prefix can be used to tag the output number :
 
 ```shell
 $ cat ./examples/hex.json
@@ -124,3 +125,29 @@ $ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t ./ex
 0xffffffffffffffffffffffffffffffff
 ```
 
+Numeral systems json files can be stored into the XSD directory linked with the application. If so, the numeral system is directly known by bibicode after the name of the json file :
+
+```shell
+$ cat ~/.local/share/bibicode/budu2.json
+{
+    "digits": [["B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"], ["a", "i","o","u"]]
+}
+
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t budu2
+KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
+```
+
+By default, decimal system will be used if none is given. However, bibicode will try to guess the numeral system from the prefixs of the input numbers.
+
+```shell
+Not yet available
+```
+
+Concat option can be used to concat output numbers if several numbers are present on the entry :
+
+```shell
+$ ./target/debug/bibicode 324443242 76575432423 -f dec -t hex
+0x13569c6a 0x11d4405ee7
+$ ./target/debug/bibicode 324443242 76575432423 -f dec -t hex --concat
+0x13569c6a11d4405ee7
+```
