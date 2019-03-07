@@ -80,6 +80,16 @@ pub struct NumeralSystem {
 
 impl NumeralSystem {
 
+
+    // static method to find out a numeral system by its prefix given a number
+    pub fn autodetect<'a>(number: &str, nums: Vec<&'a NumeralSystem>) -> Option<&'a NumeralSystem> {
+        let res: Vec<&'a NumeralSystem> = nums.into_iter().filter(|ns| (ns.prefix.len()>0)&&(ns.prefix[..]==number[0..ns.prefix.len()]) ).collect();
+        if res.len() == 1 {
+            return Some(res[0]);
+        }
+        None
+    }
+
     /// Returns new numeral system from the strings given. If several vecs are given to the function, figits will be made by a combination of all vecs.
     /// - Exemple for decimal system entry must be vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
     ///
