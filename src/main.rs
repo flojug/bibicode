@@ -19,6 +19,7 @@ use serde_derive::{Serialize, Deserialize};
 
 extern crate indexmap;
 use indexmap::map::IndexMap;
+use std::collections::HashMap;
 
 fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
 
@@ -36,12 +37,9 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
         digits: Vec<String>,
     }
 
-    match File::open(path) {
-        Ok(file) => file,
-        Err(_) => {
-            return Err(BibiError::BadNumeralSystem);
-        }
-    };
+    if File::open(path).is_err() {
+        return Err(BibiError::BadNumeralSystem);
+    }
 
     let contents = match fs::read_to_string(path) {
         Ok(contents) => contents,
@@ -63,10 +61,30 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
     };
 }
 
+fn extract_prefix_from_path(path: &str) -> Option<String> {
+    if File::open(path).is_err() {
+        return None;
+    }
+    let contents = match fs::read_to_string(path) {
+        Ok(contents) => contents,
+        Err(_) => { return None; },
+    };
+    let test: serde_json::Value = serde_json::from_str(&contents).unwrap();
+    if !test["prefix"].is_null() {
+        return Some(test["prefix"].as_str().unwrap().to_string());
+    }
+    None
+}
+
 
 fn main() -> Result<(), BibiError> {
 
+    let yaml = load_yaml!("bibic.yaml");
+    let matches = App::from_yaml(yaml).get_matches();
+    let known_prefixes_from_tags: HashMap<String, String> = NumeralSystem::get_prefixes_from_tags();
+
     let xdg_dirs = xdg::BaseDirectories::with_prefix("bibicode").unwrap();
+    let mut known_prefixes_from_xdgs: HashMap<String, String> = HashMap::new();
 
     let json_files = xdg_dirs.list_data_files("");
     let mut xdg_nums: IndexMap<&str, &str> = IndexMap::new();
@@ -74,28 +92,22 @@ fn main() -> Result<(), BibiError> {
         let filename = json_file.file_stem();
         if let Some(num) = filename {
             xdg_nums.entry(num.to_str().unwrap()).or_insert(json_file.to_str().unwrap());
+            if let Some(prefix) = extract_prefix_from_path(json_file.to_str().unwrap()) {
+                known_prefixes_from_xdgs.insert(prefix, json_file.to_str().unwrap().to_string());
+            }
         }
     }
-
-    let yaml = load_yaml!("bibic.yaml");
-    let matches = App::from_yaml(yaml).get_matches();
-
+    // closure to build in and out numeral system
     let init_num = |entry: &str| -> Result<NumeralSystem, BibiError> {
         if Path::new(entry).exists() {
-            match num_from_path(entry) {
-                Ok(num) => return Ok(num),
-                Err(err) => return Err(err),
-            }
+            return num_from_path(entry);
         } else {
             match NumeralSystem::new_from_tag(entry) {
                 Ok(num) => return Ok(num),
                 Err(_) => {
                     // try xdgs files
                     if xdg_nums.contains_key(entry) {
-                        match num_from_path(xdg_nums[entry]) {
-                            Ok(num) => return Ok(num),
-                            Err(err) => return Err(err),
-                        }
+                        return num_from_path(xdg_nums[entry]);
                     } else {
                         return Err(BibiError::BadNumeralSystem);
                     }
@@ -105,16 +117,37 @@ fn main() -> Result<(), BibiError> {
     };
 
     let strfrom = matches.value_of("from").unwrap_or("dec");
-    let from: NumeralSystem = match init_num(strfrom) {
-        Ok(num) => num,
-        Err(err) => return Err(err),
-    };
+    let mut from: NumeralSystem;
+    if matches.value_of("from").is_none() {
+        // if entry num system not given, try to find it out
+        // from the prefix of input number
+        let input_numbers: Vec<_> = matches.values_of("INPUT_NUMBER").unwrap().collect();
+        let number: &str = input_numbers.first().unwrap();
+        from = init_num(strfrom)?;
+        let mut prefok = false;
+        for pref in known_prefixes_from_tags.keys() {
+            if (pref.len()>0) && (pref[..]==number[0..pref.len()]) {
+                prefok = true;
+                from = NumeralSystem::new_from_tag(&known_prefixes_from_tags[pref][..]).unwrap();
+            }
+        }
+        if !prefok {
+            for pref in known_prefixes_from_xdgs.keys() {
+                if (pref.len()>0) && (pref[..]==number[0..pref.len()]) {
+                    prefok = true;
+                    from = num_from_path(&known_prefixes_from_xdgs[pref][..]).unwrap();
+                }
+            }
+        }
+        if !prefok {
+            from = NumeralSystem::new_from_tag("dec").unwrap();
+        }
+    } else {
+        from = init_num(strfrom)?;
+    }
 
     let strto = matches.value_of("to").unwrap_or("dec");
-    let mut to: NumeralSystem = match init_num(strto) {
-        Ok(num) => num,
-        Err(err) => return Err(err),
-    };
+    let mut to: NumeralSystem = init_num(strto)?;
 
     let input_numbers: Vec<_> = matches.values_of("INPUT_NUMBER").unwrap().collect();
 
@@ -128,12 +161,8 @@ fn main() -> Result<(), BibiError> {
     let coder = BibiCoder::new(from, to);
 
     for input_number in input_numbers.iter() {
-        let output_number = match coder.swap(input_number) {
-            Ok(on) => on,
-            Err(err) => {
-                return Err(err);
-            }
-        };
+        let output_number = coder.swap(input_number)?;
+
         if matches.is_present("concat") {
             res = res + &output_number;
         } else {

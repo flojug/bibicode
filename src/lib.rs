@@ -55,6 +55,7 @@ use std::char;
 
 extern crate indexmap;
 use indexmap::map::IndexMap;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum BibiError {
@@ -78,15 +79,6 @@ pub struct NumeralSystem {
 }
 
 impl NumeralSystem {
-
-    // static method to find out a numeral system by its prefix given a number
-    pub fn autodetect<'a>(number: &str, nums: Vec<&'a NumeralSystem>) -> Option<&'a NumeralSystem> {
-        let res: Vec<&'a NumeralSystem> = nums.into_iter().filter(|ns| (ns.prefix.len()>0)&&(ns.prefix[..]==number[0..ns.prefix.len()]) ).collect();
-        if res.len() == 1 {
-            return Some(res[0]);
-        }
-        None
-    }
 
     /// Returns new numeral system from the strings given. If several vecs are given to the function, figits will be made by a combination of all vecs.
     /// - Exemple for decimal system entry must be vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))
@@ -164,22 +156,51 @@ impl NumeralSystem {
     /// - budu for a test system easy to read
     /// - utf8 for a test system with UTF8 characters
     /// - base58 for base58 as used in bitcoin
-    pub fn new_from_tag(tag: &str) -> Result<NumeralSystem, BibiError> {
-        let chin_factory = ||->Vec<Vec<String>> {let mut ret: Vec<Vec<String>> = vec!(vec!());  for x in 0x3400..0x4000 { ret[0].push(char::from_u32(x).unwrap().to_string()); }; ret};
-        match tag {
-            "bin" => NumeralSystem::new("0b", vec!(vec!("0", "1"))),
-            "oct" => NumeralSystem::new("0o", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7"))),
-            "dec" => NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))),
-            "hex" => NumeralSystem::new("0x", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"))),
-            "bibi" => NumeralSystem::new("", vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"))),
-            "budu" => NumeralSystem::new("", vec!(vec!("B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"), vec!("a", "i","o","u") )),
-            "utf8" => NumeralSystem::new("", vec!(vec!("\u{25a0}", "\u{25c0}", "\u{25cf}", "\u{2660}", "\u{2665}", "\u{2666}", "\u{2663}", "\u{2691}", "\u{25c6}", "\u{2605}"), vec!("\u{25a1}", "\u{25c1}", "\u{25cb}", "\u{2664}", "\u{2661}", "\u{2662}", "\u{2667}", "\u{2690}", "\u{25c7}", "\u{2606}"))),
-            "base58" => NumeralSystem::new("", vec!(vec!("1","2","3","4","5","6","7","8","9","A","B","C","D","E","F","G","H","J","K","L","M","N","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","m","n","o","p","q","r","s","t","u","v","w","x","y","z"))),
-            "chin" => NumeralSystem::new_from_strings(String::from(""), chin_factory()),
-            _ => Err(BibiError::BadTagNumeralSystem),
-        }
+    ///
+    fn get_tags() ->  IndexMap<&'static str, (String, Vec<Vec<String>>)> {
+        let chin_factory = ||->Vec<Vec<String>> {
+            let mut ret: Vec<Vec<String>> = vec!(vec!());
+            for x in 0x3400..0x4000 {
+                let ptrc = char::from_u32(x).unwrap().to_string();
+                ret[0].push(ptrc);
+            };
+            ret
+        };
+        let mut tags: IndexMap<&'static str, (String, Vec<Vec<String>>)> = IndexMap::new();
+        tags.insert("bin", (String::from("0b"), vec!(vec!(String::from("0"), String::from("1")))));
+        tags.insert("oct", (String::from("0o"), vec!(vec!(String::from("0"), String::from("1"), String::from("2"), String::from("3"), String::from("4"), String::from("5"), String::from("6"), String::from("7")))));
+        tags.insert("dec", (String::from(""), vec!(vec!(String::from("0"), String::from("1"), String::from("2"), String::from("3"), String::from("4"), String::from("5"), String::from("6"), String::from("7"), String::from("8"), String::from("9")))));
+        tags.insert("hex", (String::from("0x"), vec!(vec!(String::from("0"), String::from("1"), String::from("2"), String::from("3"), String::from("4"), String::from("5"), String::from("6"), String::from("7"), String::from("8"), String::from("9"), String::from("a"), String::from("b"), String::from("c"), String::from("d"), String::from("e"), String::from("f")))));
+        tags.insert("bibi", (String::from(""), vec!(vec!(String::from("HO"), String::from("HA"), String::from("HE"), String::from("HI"), String::from("BO"), String::from("BA"), String::from("BE"), String::from("BI"), String::from("KO"), String::from("KA"), String::from("KE"), String::from("KI"), String::from("DO"), String::from("DA"), String::from("DE"), String::from("DI")))));
+        tags.insert("budu", (String::from(""), vec!(vec!(String::from("B"),String::from("K"),String::from("D"),String::from("F"),String::from("G"),String::from("J"),String::from("L"),String::from("M"),String::from("N"),String::from("P"),String::from("R"),String::from("S"),String::from("T"),String::from("V"),String::from("X"),String::from("Z")), vec!(String::from("a"), String::from("i"),String::from("o"),String::from("u")) )));
+        tags.insert("utf8", (String::from(""), vec!(vec!(String::from("\u{25a0}"), String::from("\u{25c0}"), String::from("\u{25cf}"), String::from("\u{2660}"), String::from("\u{2665}"), String::from("\u{2666}"), String::from("\u{2663}"), String::from("\u{2691}"), String::from("\u{25c6}"), String::from("\u{2605}")), vec!(String::from("\u{25a1}"), String::from("\u{25c1}"), String::from("\u{25cb}"), String::from("\u{2664}"), String::from("\u{2661}"), String::from("\u{2662}"), String::from("\u{2667}"), String::from("\u{2690}"), String::from("\u{25c7}"), String::from("\u{2606}")))));
+        tags.insert("base58", (String::from(""), vec!(vec!(String::from("1"), String::from("2"), String::from("3"), String::from("4"), String::from("5"), String::from("6"), String::from("7"), String::from("8"), String::from("9"), String::from("A"), String::from("B"), String::from("C"), String::from("D"), String::from("E"), String::from("F"), String::from("G"), String::from("H"), String::from("J"), String::from("K"), String::from("L"), String::from("M"), String::from("N"), String::from("P"), String::from("Q"), String::from("R"), String::from("S"), String::from("T"), String::from("U"), String::from("V"), String::from("W"), String::from("X"), String::from("Y"), String::from("Z"), String::from("a"), String::from("b"), String::from("c"), String::from("d"), String::from("e"), String::from("f"), String::from("g"), String::from("h"), String::from("i"), String::from("j"), String::from("k"), String::from("m"), String::from("n"), String::from("o"), String::from("p"), String::from("q"), String::from("r"), String::from("s"), String::from("t"), String::from("u"), String::from("v"), String::from("w"), String::from("x"), String::from("y"), String::from("z")))));
+        tags.insert("chin", (String::from(""), chin_factory()));
+        tags
     }
 
+    pub fn get_prefixes_from_tags() -> HashMap<String, String> {
+        let mut ret = HashMap::new();
+        let tags = NumeralSystem::get_tags();
+        for (tag, tuple) in tags.iter() {
+            let pref = tuple.0.to_string();
+            if !pref.is_empty() {
+                ret.insert(pref, tag.to_string());
+            }
+        }
+        ret
+    }
+
+    pub fn new_from_tag(tag: &str) -> Result<NumeralSystem, BibiError> {
+        let tags = NumeralSystem::get_tags();
+        if tags.contains_key(tag) {
+            let prefix = tags[tag].0.clone();
+            let vecd = tags[tag].1.clone();
+            Ok(NumeralSystem::new_from_strings(prefix, vecd)?)
+        } else {
+            Err(BibiError::BadTagNumeralSystem)
+        }
+    }
 
     /// Returns the legth of a digit (all digits have the same length)
     pub fn len(&self) -> usize { self.digits.len() }

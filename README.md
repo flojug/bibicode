@@ -137,10 +137,28 @@ $ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t budu2
 KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
 ```
 
-By default, decimal system will be used if none is given. However, bibicode will try to guess the numeral system from the prefixs of the input numbers.
+By default, decimal system will be used if none is given. However, bibicode will try to guess the numeral system from the prefix of the first input number.
 
 ```shell
-Not yet available
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t hex
+0x41a790d39fed98481f6dc6083d1ffff
+
+$ # use default dec as input :
+$ ./target/debug/bibicode 5454366920938463463375407431768211455 -t hex
+0x41a790d39fed98481f6dc6083d1ffff
+
+$ cat ~/.local/share/bibicode/budu.json
+{
+    "prefix": "budu-",
+    "digits": [["B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"], ["a", "i","o","u"]]
+}
+
+$ # will use budu as input (because of the prefix) and default dec as output
+$ ./target/debug/bibicode budu-KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
+5454366920938463463375407431768211455
+
+./target/debug/bibicode 5454366920938463463375407431768211455 -t budu
+budu-KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
 ```
 
 Concat option can be used to concat output numbers if several numbers are present on the entry :
