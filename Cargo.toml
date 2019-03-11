@@ -7,7 +7,7 @@ description = "A crate to convert any integer from one numeral system to another
 readme="README.md"
 repository = "https://github.com/flojug/bibicode"
 categories = ["algorithms", "encoding"]
-keywords=["conversion", "binary", "hexadecimal", "numeral system", "decimal", "octal"]
+keywords=["conversion", "binary", "hexadecimal", "decimal", "octal"]
 
 [dependencies]
 clap = { version = "2.32.0", features = ["yaml"] }

@@ -169,3 +169,21 @@ $ ./target/debug/bibicode 324443242 76575432423 -f dec -t hex
 $ ./target/debug/bibicode 324443242 76575432423 -f dec -t hex --concat
 0x13569c6a11d4405ee7
 ```
+
+Prefix can be used to deal with numbers as bitcoin addresses :
+```shell
+$ # reading a P2PKH bitcoin address
+
+$ cat ./examples/bitcoin-P2PKH.json
+{
+    "prefix": "1",
+    "digits": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+}
+
+$ ./target/debug/bibicode 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem -f ./examples/bitcoin-P2PKH.json -t chin
+㐛㴓㖐㵋㠁㡞㒙㝣㕐㖊㸍㣑㞹㔜㿹㼄㓆
+
+$ ./target/debug/bibicode 㐛㴓㖐㵋㠁㡞㒙㝣㕐㖊㸍㣑㞹㔜㿹㼄㓆 -f chin -t ./examples/bitcoin-P2PKH.json
+17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem
+
+```
