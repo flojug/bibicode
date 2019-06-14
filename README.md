@@ -59,32 +59,31 @@ assert_eq!(test, "2000");
 
 ## Example : using application
 
-Use `cargo run` to build and run the application or `cargo build` to build it in debug mode.
-
 ```shell
-$ cargo build
+$ cargo install
 ...
 
-$ ./target/debug/bibicode 1111111111111111 -f bin -t hex
+
+$ bibicode 1111111111111111 -f bin -t hex
 0xffff
 
-./target/debug/bibicode 1111111111111111 100100010100000001 -f bin -t hex
+$ bibicode 1111111111111111 100100010100000001 -f bin -t hex
 0xffff 0x24501
 
-$ ./target/debug/bibicode ffff -t bin -f hex
+$ bibicode ffff -t bin -f hex
 0b1111111111111111
 
-$ ./target/debug/bibicode ffffffffffffffffffffffffffffffff -t dec -f hex
+$ bibicode ffffffffffffffffffffffffffffffff -t dec -f hex
 340282366920938463463374607431768211455
 
-$ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t hex
+$ bibicode 340282366920938463463374607431768211455 -f dec -t hex
 0xffffffffffffffffffffffffffffffff
 
 
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t utf8
+$ bibicode 5454366920938463463375407431768211455 -f dec -t utf8
 ■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢
 
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t chin
+$ bibicode 5454366920938463463375407431768211455 -f dec -t chin
 㑈㹨㕫㕃㽃㹼㷶㓱㸿㰪㯿
 ```
 
@@ -97,10 +96,10 @@ $ cat ./examples/bibi.json
         "KA", "KE", "KI", "DO", "DA", "DE", "DI"]
 }
 
-$ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/bibi.json
+$ bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/bibi.json
 DIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDIDI
 
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/bibi.json
+$ bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/bibi.json
 BOHAKEBIKAHODAHIKADIDEDAKAKOBOKOHADIBEDADOBEHOKOHIDAHADIDIDIDI
 
 $ cat ./examples/budu.json
@@ -108,7 +107,7 @@ $ cat ./examples/budu.json
     "digits": [["B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"], ["a", "i","o","u"]]
 }
 
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/budu.json
+$ bibicode 5454366920938463463375407431768211455 -f dec -t ./examples/budu.json
 KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
 ```
 
@@ -121,7 +120,7 @@ $ cat ./examples/hex.json
     "digits":["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"]
 }
 
-$ ./target/debug/bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/hex.json
+$ bibicode 340282366920938463463374607431768211455 -f dec -t ./examples/hex.json
 0xffffffffffffffffffffffffffffffff
 ```
 
@@ -133,18 +132,18 @@ $ cat ~/.local/share/bibicode/budu2.json
     "digits": [["B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"], ["a", "i","o","u"]]
 }
 
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t budu2
+$ bibicode 5454366920938463463375407431768211455 -f dec -t budu2
 KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
 ```
 
 By default, decimal system will be used if none is given. However, bibicode will try to guess the numeral system from the prefix of the first input number.
 
 ```shell
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -f dec -t hex
+$ bibicode 5454366920938463463375407431768211455 -f dec -t hex
 0x41a790d39fed98481f6dc6083d1ffff
 
 $ # use default dec as input :
-$ ./target/debug/bibicode 5454366920938463463375407431768211455 -t hex
+$ bibicode 5454366920938463463375407431768211455 -t hex
 0x41a790d39fed98481f6dc6083d1ffff
 
 $ cat ~/.local/share/bibicode/budu.json
@@ -154,36 +153,61 @@ $ cat ~/.local/share/bibicode/budu.json
 }
 
 $ # will use budu as input (because of the prefix) and default dec as output
-$ ./target/debug/bibicode budu-KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
+$ bibicode budu-KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
 5454366920938463463375407431768211455
 
-./target/debug/bibicode 5454366920938463463375407431768211455 -t budu
+$ bibicode 5454366920938463463375407431768211455 -t budu
 budu-KaKoPuPaFiFoMuXuLiNiDaKuVoVuKoBoBuVaMuZuZu
 ```
 
 Concat option can be used to concat output numbers if several numbers are present on the entry :
 
 ```shell
-$ ./target/debug/bibicode 324443242 76575432423 -f dec -t hex
+$ bibicode 324443242 76575432423 -f dec -t hex
 0x13569c6a 0x11d4405ee7
-$ ./target/debug/bibicode 324443242 76575432423 -f dec -t hex --concat
+$ bibicode 324443242 76575432423 -f dec -t hex --concat
 0x13569c6a11d4405ee7
 ```
 
-Prefix can be used to deal with numbers as bitcoin addresses :
-```shell
-$ # reading a P2PKH bitcoin address
+Regex can be given to bibicode to describe the format of the number.
 
-$ cat ./examples/bitcoin-P2PKH.json
+Example converting a bitcoin address to decimal (first byte is version number) :
+```shell
+$ cat ./examples/base58.json
 {
-    "prefix": "1",
     "digits": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
 }
-
-$ ./target/debug/bibicode 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem -f ./examples/bitcoin-P2PKH.json -t chin
-㐛㴓㖐㵋㠁㡞㒙㝣㕐㖊㸍㣑㞹㔜㿹㼄㓆
-
-$ ./target/debug/bibicode 㐛㴓㖐㵋㠁㡞㒙㝣㕐㖊㸍㣑㞹㔜㿹㼄㓆 -f chin -t ./examples/bitcoin-P2PKH.json
-17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem
-
+$ bibicode 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem -f ./examples/base58.json -t dec --regex "^(\\d{1})([1-9A-HJ-NP-Za-km-z]*)$"
+0 1746223458145969276700901827421233769953772985502309560518
 ```
+
+Use --concat option to concat the output :
+```shell
+$ bibicode 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem -f ./examples/base58.json -t dec --regex "^(\\d{1})([1-9A-HJ-NP-Za-km-z]*)$" --concat
+01746223458145969276700901827421233769953772985502309560518
+```
+
+And revert operation :
+```shell
+$ bibicode 01746223458145969276700901827421233769953772985502309560518 -f dec -t ./examples/base58.json  --regex "^(\\d{1})(\\d{58})$"
+17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem
+```
+
+General prefix, separator and suffix can be given directly to print output of bibicode.
+
+Example swapping HTML RGB colors with hexadecimal :
+```shell
+$ cat ./examples/hexcol.json
+{
+    "prefix":"#",
+    "digits":["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"]
+}
+
+$ bibicode "#e135ad" -f ./examples/hexcol.json -t dec -s "," -p "rgb(" -x ")" -r "([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})"
+rgb(225,53,173)
+
+$ bibicode "rgb(225,53,173)" -f dec -t ./examples/hexcol.json -r "^rgb\\((\\d{1,3}),(\\d{1,3}),(\\d{1,3})\\)$" --concat
+#e135ad
+```
+
+

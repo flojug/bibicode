@@ -1,4 +1,3 @@
-
 // Copyright ⓒ 2019 Florent Jugla
 //
 // Licensed under MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
@@ -21,7 +20,7 @@
 //!        extern crate bibicode;
 //!
 //!        let dec = bibicode::NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-//!        let bibi = bibicode::NumeralSystem::new("", vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"))).unwrap();
+//!        let bibi = bibicode::NumeralSystem::new("",  vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"))).unwrap();
 //!        let coder = bibicode::BibiCoder::new(dec, bibi);
 //!        let test = coder.swap("2000").unwrap();
 //!        assert_eq!(test, "BIDAHO");
@@ -49,13 +48,15 @@
 //!        let test = coder.swap("7d0").unwrap();
 //!        assert_eq!(test, "2000");
 
-
-use std::fmt;
 use std::char;
+use std::fmt;
 
 extern crate indexmap;
 use indexmap::map::IndexMap;
 use std::collections::HashMap;
+
+extern crate regex;
+use regex::Regex;
 
 #[derive(Debug)]
 pub enum BibiError {
@@ -63,10 +64,12 @@ pub enum BibiError {
     BadNumeralSystem,
     /// One digit given in the entry was not found in numeral system
     EntryMismatchWithNumeralSystem,
+    RegexMismatchWithEntry,
     /// Non existent pre-defined numeral system
     BadTagNumeralSystem,
+    /// Bad regular expression
+    BadRegularExpression,
 }
-
 
 /// Define a numeral system by enumerating all the digits. The first digit is zero. The radix is equal to the number of digits. One digit can have any number of characters but all digits must have the same length.
 #[derive(Debug)]
@@ -79,11 +82,12 @@ pub struct NumeralSystem {
 }
 
 impl NumeralSystem {
-
-
     // static method to find out a numeral system by its prefix given a number
     pub fn autodetect<'a>(number: &str, nums: Vec<&'a NumeralSystem>) -> Option<&'a NumeralSystem> {
-        let res: Vec<&'a NumeralSystem> = nums.into_iter().filter(|ns| (ns.prefix.len()>0)&&(ns.prefix[..]==number[0..ns.prefix.len()]) ).collect();
+        let res: Vec<&'a NumeralSystem> = nums
+            .into_iter()
+            .filter(|ns| (ns.prefix.len() > 0) && (ns.prefix[..] == number[0..ns.prefix.len()]))
+            .collect();
         if res.len() == 1 {
             return Some(res[0]);
         }
@@ -98,14 +102,23 @@ impl NumeralSystem {
     }
 
     /// Same as ::new but from vec of strings.
-     pub fn new_from_strings(prefix: String, entry: Vec<Vec<String>>) -> Result<NumeralSystem, BibiError> {
-        let entry_str: Vec<Vec<&str>> = entry.iter().map(|v| v.iter().map(|s| &**s).collect()).collect();
+    pub fn new_from_strings(
+        prefix: String,
+        entry: Vec<Vec<String>>,
+    ) -> Result<NumeralSystem, BibiError> {
+        let entry_str: Vec<Vec<&str>> = entry
+            .iter()
+            .map(|v| v.iter().map(|s| &**s).collect())
+            .collect();
         NumeralSystem::new(&prefix[..], entry_str)
     }
 
     // internal method to build system from vec of vec
-    fn new_rec(prefix: &str, entry: &Vec<Vec<&str>>, index: usize) -> Result<NumeralSystem, BibiError> {
-
+    fn new_rec(
+        prefix: &str,
+        entry: &Vec<Vec<&str>>,
+        index: usize,
+    ) -> Result<NumeralSystem, BibiError> {
         let mut len_digit;
         let mut digits: IndexMap<String, u32> = IndexMap::new();
         let mut revdigits: IndexMap<u32, String> = IndexMap::new();
@@ -114,16 +127,16 @@ impl NumeralSystem {
 
         match first_entry.first() {
             None => return Err(BibiError::BadNumeralSystem),
-            Some(digit) => len_digit = digit.len()
+            Some(digit) => len_digit = digit.len(),
         }
 
-        if len_digit==0 {
+        if len_digit == 0 {
             return Err(BibiError::BadNumeralSystem);
         }
 
         let mut sub_num_sys = None;
-        if index < entry.len()-1 {
-            sub_num_sys = Some(NumeralSystem::new_rec(prefix, entry, index+1)?);
+        if index < entry.len() - 1 {
+            sub_num_sys = Some(NumeralSystem::new_rec(prefix, entry, index + 1)?);
         }
 
         let mut cpt: u32 = 0;
@@ -133,7 +146,9 @@ impl NumeralSystem {
             }
             if let Some(num) = sub_num_sys {
                 for digit2 in num.digits.keys() {
-                    digits.entry(String::from(*digit) + &String::from(&digit2[..])).or_insert(cpt);
+                    digits
+                        .entry(String::from(*digit) + &String::from(&digit2[..]))
+                        .or_insert(cpt);
                     revdigits.insert(cpt, String::from(*digit) + &String::from(&digit2[..]));
                     cpt = cpt + 1;
                 }
@@ -154,9 +169,13 @@ impl NumeralSystem {
             len_digit = len_digit + num.len_digit;
         }
 
-        Ok(NumeralSystem { prefix: String::from(prefix), len_digit: len_digit, digits: digits, revdigits: revdigits })
+        Ok(NumeralSystem {
+            prefix: String::from(prefix),
+            len_digit: len_digit,
+            digits: digits,
+            revdigits: revdigits,
+        })
     }
-
 
     /// Returns pre-defined numeral systems :
     /// - dec for decimal
@@ -167,24 +186,236 @@ impl NumeralSystem {
     /// - utf8 for a test system with UTF8 characters
     /// - base58 for base58 as used in bitcoin
     ///
-    fn get_tags() ->  IndexMap<&'static str, (String, Vec<Vec<String>>)> {
-        let chin_factory = ||->Vec<Vec<String>> {
-            let mut ret: Vec<Vec<String>> = vec!(vec!());
+    /// UTILISER lazy-static
+    fn get_tags() -> IndexMap<&'static str, (String, Vec<Vec<String>>)> {
+        let chin_factory = || -> Vec<Vec<String>> {
+            let mut ret: Vec<Vec<String>> = vec![vec![]];
             for x in 0x3400..0x4000 {
                 let ptrc = char::from_u32(x).unwrap().to_string();
                 ret[0].push(ptrc);
-            };
+            }
             ret
         };
         let mut tags: IndexMap<&'static str, (String, Vec<Vec<String>>)> = IndexMap::new();
-        tags.insert("bin", (String::from("0b"), vec!(vec!(String::from("0"), String::from("1")))));
-        tags.insert("oct", (String::from("0o"), vec!(vec!(String::from("0"), String::from("1"), String::from("2"), String::from("3"), String::from("4"), String::from("5"), String::from("6"), String::from("7")))));
-        tags.insert("dec", (String::from(""), vec!(vec!(String::from("0"), String::from("1"), String::from("2"), String::from("3"), String::from("4"), String::from("5"), String::from("6"), String::from("7"), String::from("8"), String::from("9")))));
-        tags.insert("hex", (String::from("0x"), vec!(vec!(String::from("0"), String::from("1"), String::from("2"), String::from("3"), String::from("4"), String::from("5"), String::from("6"), String::from("7"), String::from("8"), String::from("9"), String::from("a"), String::from("b"), String::from("c"), String::from("d"), String::from("e"), String::from("f")))));
-        tags.insert("bibi", (String::from(""), vec!(vec!(String::from("HO"), String::from("HA"), String::from("HE"), String::from("HI"), String::from("BO"), String::from("BA"), String::from("BE"), String::from("BI"), String::from("KO"), String::from("KA"), String::from("KE"), String::from("KI"), String::from("DO"), String::from("DA"), String::from("DE"), String::from("DI")))));
-        tags.insert("budu", (String::from(""), vec!(vec!(String::from("B"),String::from("K"),String::from("D"),String::from("F"),String::from("G"),String::from("J"),String::from("L"),String::from("M"),String::from("N"),String::from("P"),String::from("R"),String::from("S"),String::from("T"),String::from("V"),String::from("X"),String::from("Z")), vec!(String::from("a"), String::from("i"),String::from("o"),String::from("u")) )));
-        tags.insert("utf8", (String::from(""), vec!(vec!(String::from("\u{25a0}"), String::from("\u{25c0}"), String::from("\u{25cf}"), String::from("\u{2660}"), String::from("\u{2665}"), String::from("\u{2666}"), String::from("\u{2663}"), String::from("\u{2691}"), String::from("\u{25c6}"), String::from("\u{2605}")), vec!(String::from("\u{25a1}"), String::from("\u{25c1}"), String::from("\u{25cb}"), String::from("\u{2664}"), String::from("\u{2661}"), String::from("\u{2662}"), String::from("\u{2667}"), String::from("\u{2690}"), String::from("\u{25c7}"), String::from("\u{2606}")))));
-        tags.insert("base58", (String::from(""), vec!(vec!(String::from("1"), String::from("2"), String::from("3"), String::from("4"), String::from("5"), String::from("6"), String::from("7"), String::from("8"), String::from("9"), String::from("A"), String::from("B"), String::from("C"), String::from("D"), String::from("E"), String::from("F"), String::from("G"), String::from("H"), String::from("J"), String::from("K"), String::from("L"), String::from("M"), String::from("N"), String::from("P"), String::from("Q"), String::from("R"), String::from("S"), String::from("T"), String::from("U"), String::from("V"), String::from("W"), String::from("X"), String::from("Y"), String::from("Z"), String::from("a"), String::from("b"), String::from("c"), String::from("d"), String::from("e"), String::from("f"), String::from("g"), String::from("h"), String::from("i"), String::from("j"), String::from("k"), String::from("m"), String::from("n"), String::from("o"), String::from("p"), String::from("q"), String::from("r"), String::from("s"), String::from("t"), String::from("u"), String::from("v"), String::from("w"), String::from("x"), String::from("y"), String::from("z")))));
+        tags.insert(
+            "bin",
+            (
+                String::from("0b"),
+                vec![vec![String::from("0"), String::from("1")]],
+            ),
+        );
+        tags.insert(
+            "oct",
+            (
+                String::from("0o"),
+                vec![vec![
+                    String::from("0"),
+                    String::from("1"),
+                    String::from("2"),
+                    String::from("3"),
+                    String::from("4"),
+                    String::from("5"),
+                    String::from("6"),
+                    String::from("7"),
+                ]],
+            ),
+        );
+        tags.insert(
+            "dec",
+            (
+                String::from(""),
+                vec![vec![
+                    String::from("0"),
+                    String::from("1"),
+                    String::from("2"),
+                    String::from("3"),
+                    String::from("4"),
+                    String::from("5"),
+                    String::from("6"),
+                    String::from("7"),
+                    String::from("8"),
+                    String::from("9"),
+                ]],
+            ),
+        );
+        tags.insert(
+            "hex",
+            (
+                String::from("0x"),
+                vec![vec![
+                    String::from("0"),
+                    String::from("1"),
+                    String::from("2"),
+                    String::from("3"),
+                    String::from("4"),
+                    String::from("5"),
+                    String::from("6"),
+                    String::from("7"),
+                    String::from("8"),
+                    String::from("9"),
+                    String::from("a"),
+                    String::from("b"),
+                    String::from("c"),
+                    String::from("d"),
+                    String::from("e"),
+                    String::from("f"),
+                ]],
+            ),
+        );
+        tags.insert(
+            "bibi",
+            (
+                String::from(""),
+                vec![vec![
+                    String::from("HO"),
+                    String::from("HA"),
+                    String::from("HE"),
+                    String::from("HI"),
+                    String::from("BO"),
+                    String::from("BA"),
+                    String::from("BE"),
+                    String::from("BI"),
+                    String::from("KO"),
+                    String::from("KA"),
+                    String::from("KE"),
+                    String::from("KI"),
+                    String::from("DO"),
+                    String::from("DA"),
+                    String::from("DE"),
+                    String::from("DI"),
+                ]],
+            ),
+        );
+        tags.insert(
+            "budu",
+            (
+                String::from(""),
+                vec![
+                    vec![
+                        String::from("B"),
+                        String::from("K"),
+                        String::from("D"),
+                        String::from("F"),
+                        String::from("G"),
+                        String::from("J"),
+                        String::from("L"),
+                        String::from("M"),
+                        String::from("N"),
+                        String::from("P"),
+                        String::from("R"),
+                        String::from("S"),
+                        String::from("T"),
+                        String::from("V"),
+                        String::from("X"),
+                        String::from("Z"),
+                    ],
+                    vec![
+                        String::from("a"),
+                        String::from("i"),
+                        String::from("o"),
+                        String::from("u"),
+                    ],
+                ],
+            ),
+        );
+        tags.insert(
+            "utf8",
+            (
+                String::from(""),
+                vec![
+                    vec![
+                        String::from("\u{25a0}"),
+                        String::from("\u{25c0}"),
+                        String::from("\u{25cf}"),
+                        String::from("\u{2660}"),
+                        String::from("\u{2665}"),
+                        String::from("\u{2666}"),
+                        String::from("\u{2663}"),
+                        String::from("\u{2691}"),
+                        String::from("\u{25c6}"),
+                        String::from("\u{2605}"),
+                    ],
+                    vec![
+                        String::from("\u{25a1}"),
+                        String::from("\u{25c1}"),
+                        String::from("\u{25cb}"),
+                        String::from("\u{2664}"),
+                        String::from("\u{2661}"),
+                        String::from("\u{2662}"),
+                        String::from("\u{2667}"),
+                        String::from("\u{2690}"),
+                        String::from("\u{25c7}"),
+                        String::from("\u{2606}"),
+                    ],
+                ],
+            ),
+        );
+        tags.insert(
+            "base58",
+            (
+                String::from(""),
+                vec![vec![
+                    String::from("1"),
+                    String::from("2"),
+                    String::from("3"),
+                    String::from("4"),
+                    String::from("5"),
+                    String::from("6"),
+                    String::from("7"),
+                    String::from("8"),
+                    String::from("9"),
+                    String::from("A"),
+                    String::from("B"),
+                    String::from("C"),
+                    String::from("D"),
+                    String::from("E"),
+                    String::from("F"),
+                    String::from("G"),
+                    String::from("H"),
+                    String::from("J"),
+                    String::from("K"),
+                    String::from("L"),
+                    String::from("M"),
+                    String::from("N"),
+                    String::from("P"),
+                    String::from("Q"),
+                    String::from("R"),
+                    String::from("S"),
+                    String::from("T"),
+                    String::from("U"),
+                    String::from("V"),
+                    String::from("W"),
+                    String::from("X"),
+                    String::from("Y"),
+                    String::from("Z"),
+                    String::from("a"),
+                    String::from("b"),
+                    String::from("c"),
+                    String::from("d"),
+                    String::from("e"),
+                    String::from("f"),
+                    String::from("g"),
+                    String::from("h"),
+                    String::from("i"),
+                    String::from("j"),
+                    String::from("k"),
+                    String::from("m"),
+                    String::from("n"),
+                    String::from("o"),
+                    String::from("p"),
+                    String::from("q"),
+                    String::from("r"),
+                    String::from("s"),
+                    String::from("t"),
+                    String::from("u"),
+                    String::from("v"),
+                    String::from("w"),
+                    String::from("x"),
+                    String::from("y"),
+                    String::from("z"),
+                ]],
+            ),
+        );
         tags.insert("chin", (String::from(""), chin_factory()));
         tags
     }
@@ -206,21 +437,32 @@ impl NumeralSystem {
         if tags.contains_key(tag) {
             let prefix = tags[tag].0.clone();
             let vecd = tags[tag].1.clone();
-            Ok(NumeralSystem::new_from_strings(prefix, vecd)?)
+            Ok(NumeralSystem::new_from_strings(
+                prefix,
+                vecd,
+            )?)
         } else {
             Err(BibiError::BadTagNumeralSystem)
         }
     }
 
     /// Returns the legth of a digit (all digits have the same length)
-    pub fn len(&self) -> usize { self.digits.len() }
+    pub fn len(&self) -> usize {
+        self.digits.len()
+    }
 
     /// Return the radix of this numeral system (= number of digits in numeral system)
-    pub fn radix(&self) -> usize { self.len() }
+    pub fn radix(&self) -> usize {
+        self.len()
+    }
 
-    pub fn get_prefix(&self) -> String { self.prefix.clone() }
+    pub fn get_prefix(&self) -> String {
+        self.prefix.clone()
+    }
 
-    pub fn set_prefix(&mut self, prefix: &str) { self.prefix = String::from(prefix); }
+    pub fn set_prefix(&mut self, prefix: &str) {
+        self.prefix = String::from(prefix);
+    }
 }
 
 impl fmt::Display for NumeralSystem {
@@ -235,8 +477,6 @@ impl fmt::Display for NumeralSystem {
     }
 }
 
-
-
 /// Convert any number from one numeral system to the other.
 #[derive(Debug)]
 pub struct BibiCoder {
@@ -244,11 +484,38 @@ pub struct BibiCoder {
     numsys_out: NumeralSystem,
 }
 
-impl BibiCoder
-{
+impl BibiCoder {
     /// Build a coder from numsys_in numeral system to numsys_out
-    pub fn new(numsys_in: NumeralSystem, numsys_out: NumeralSystem) -> BibiCoder  {
-        BibiCoder{numsys_in, numsys_out}
+    pub fn new(numsys_in: NumeralSystem, numsys_out: NumeralSystem) -> BibiCoder {
+        BibiCoder {
+            numsys_in,
+            numsys_out,
+        }
+    }
+
+    /// find all numbers in entry from regular expression
+    pub fn extract_numbers(entry: &str, reg: &str) -> Result<Vec<String>, BibiError> {
+        let mut numbers: Vec<String> = vec![];
+
+        if !reg.is_empty() {
+            let re: Regex = match Regex::new(&reg[..]) {
+                Ok(res) => res,
+                Err(_) => return Err(BibiError::BadRegularExpression),
+            };
+            let caps = match re.captures(entry) {
+                Some(caps) => caps,
+                None => return Err(BibiError::RegexMismatchWithEntry),
+            };
+            for number in caps.iter().skip(1) {
+                if let Some(numberok) = number {
+                    numbers.push(numberok.as_str().to_string());
+                }
+            }
+        } else {
+            numbers.push(entry.to_string());
+        }
+
+        Ok(numbers)
     }
 
     /// Swap an integer coded in numsys_in system to numsys_out
@@ -259,10 +526,12 @@ impl BibiCoder
 
     // compute BCD  numbers into binary
     fn tsujda_tfihs(&self, entry: &str) -> Result<Vec<bool>, BibiError> {
-
         // erase the prefix if present
         let rel_entry: &str;
-        if (self.numsys_in.prefix.len()>0) && (self.numsys_in.prefix[..]==entry[0..self.numsys_in.prefix.len()]) {
+        if (self.numsys_in.prefix.len() > 0)
+            && (entry.len() > self.numsys_in.prefix.len())
+            && (self.numsys_in.prefix[..] == entry[0..self.numsys_in.prefix.len()])
+        {
             rel_entry = &entry[self.numsys_in.prefix.len()..];
         } else {
             rel_entry = entry;
@@ -270,15 +539,18 @@ impl BibiCoder
 
         let radix = self.numsys_in.len() as u32;
 
-        let mut bcd: Vec<u32> = vec!();
-        let mut pivot: Vec<bool> = vec!();
+        let mut bcd: Vec<u32> = vec![];
+        let mut pivot: Vec<bool> = vec![];
 
         // compute bcd numbers from the entry
-        for i in 0..(rel_entry.len()/self.numsys_in.len_digit) {
-            let digit = String::from(&rel_entry[i*self.numsys_in.len_digit..(i*self.numsys_in.len_digit)+self.numsys_in.len_digit]);
+        for i in 0..(rel_entry.len() / self.numsys_in.len_digit) {
+            let digit = String::from(
+                &rel_entry[i * self.numsys_in.len_digit
+                    ..(i * self.numsys_in.len_digit) + self.numsys_in.len_digit],
+            );
             let digidx: u32 = match self.numsys_in.digits.get(&digit) {
                 Some(d) => *d,
-                None => return Err(BibiError::EntryMismatchWithNumeralSystem)
+                None => return Err(BibiError::EntryMismatchWithNumeralSystem),
             };
             bcd.push(digidx);
         }
@@ -288,12 +560,12 @@ impl BibiCoder
             let mut end = true;
             let mut rel = 0;
             for idx in 0..bcd.len() {
-                let nb = bcd[idx] + rel*radix;
+                let nb = bcd[idx] + rel * radix;
                 rel = nb % 2;
                 bcd[idx] = nb / 2;
-                end = if bcd[idx]>0 {false} else {end};
+                end = if bcd[idx] > 0 { false } else { end };
             }
-            pivot.insert(0, if rel==1 {true} else {false});
+            pivot.insert(0, if rel == 1 { true } else { false });
             if end {
                 break;
             }
@@ -302,32 +574,29 @@ impl BibiCoder
         Ok(pivot)
     }
 
-
     // compute  binary numbers into BCD like
     fn shift_adjust(&self, mut pivot: Vec<bool>) -> Result<String, BibiError> {
-
         let radix = self.numsys_out.len() as u32;
 
         let len_bits = pivot.len();
-        let mut bcdlike: Vec<u32> = vec!(0);
+        let mut bcdlike: Vec<u32> = vec![0];
 
         for _ in 0..len_bits {
-
             // shift
             let bit = pivot.remove(0);
-            let mut rel =  if bit {1} else {0};
+            let mut rel = if bit { 1 } else { 0 };
 
             // adjust
             for idx in 0..bcdlike.len() {
-                let mut val = (bcdlike[idx]*2) + rel;
+                let mut val = (bcdlike[idx] * 2) + rel;
                 rel = 0;
                 if val >= radix {
-                    val = val-radix;
+                    val = val - radix;
                     rel = 1;
                 }
                 bcdlike[idx] = val;
             }
-            if rel==1 {
+            if rel == 1 {
                 bcdlike.push(rel);
             }
         }
@@ -342,46 +611,56 @@ impl BibiCoder
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_numeral_system() {
-
-        let test = NumeralSystem::new("", vec!(vec!("0", "1", "2", "2")));
+        let test = NumeralSystem::new("", vec![vec!["0", "1", "2", "2"]]);
         assert!(test.is_err(), "test 1 1");
 
-        let test = NumeralSystem::new("", vec!(vec!("0", "1", "2", "22")));
+        let test = NumeralSystem::new("", vec![vec!["0", "1", "2", "22"]]);
         assert!(test.is_err(), "test 1 2");
 
-        let test = NumeralSystem::new("", vec!(vec!("0", "1", "2"), vec!("0", "1", "2", "22")));
+        let test = NumeralSystem::new("", vec![vec!["0", "1", "2"], vec!["0", "1", "2", "22"]]);
         assert!(test.is_err(), "test 1 3");
 
-        let test = NumeralSystem::new("", vec!(vec!("0", "1", "2"), vec!("0", "1", "2", "2")));
+        let test = NumeralSystem::new("", vec![vec!["0", "1", "2"], vec!["0", "1", "2", "2"]]);
         assert!(test.is_err(), "test 1 4");
 
-        let a = vec!("B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z");
-        let b = vec!("a", "i","o","u");
+        let a = vec![
+            "B", "K", "D", "F", "G", "J", "L", "M", "N", "P", "R", "S", "T", "V", "X", "Z",
+        ];
+        let b = vec!["a", "i", "o", "u"];
         let len1 = a.len() * b.len();
-        let test = NumeralSystem::new("", vec!(a, b)).unwrap();
+        let test = NumeralSystem::new("", vec![a, b]).unwrap();
         let len2 = test.digits.len();
-        assert!(len1==len2, "test 1 5");
+        assert!(len1 == len2, "test 1 5");
     }
 
     #[test]
     fn test_bibicoder() {
-
-        let dec = NumeralSystem::new("", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
-        let bibi = NumeralSystem::new("", vec!(vec!("HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA", "DE", "DI"))).unwrap();
+        let dec = NumeralSystem::new(
+            "",
+            vec![vec!["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+        )
+        .unwrap();
+        let bibi = NumeralSystem::new(
+            "",
+            vec![vec![
+                "HO", "HA", "HE", "HI", "BO", "BA", "BE", "BI", "KO", "KA", "KE", "KI", "DO", "DA",
+                "DE", "DI",
+            ]],
+        )
+        .unwrap();
 
         let dec_to_bibi = BibiCoder::new(dec, bibi);
 
         let test = dec_to_bibi.swap("2000").unwrap();
         assert_eq!(test, "BIDAHO", "test 2 1");
 
-        //let bibi = NumeralSystem::new("", vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
+        //let bibi = NumeralSystem::new("", "", vec!(vec!("H", "B", "K", "D"), vec!("O", "A", "E", "I"))).unwrap();
         let test = dec_to_bibi.swap("2000").unwrap();
         assert_eq!(test, "BIDAHO", "test 2 2");
 
@@ -404,46 +683,97 @@ mod tests {
         let test = hex_to_bin.swap("f0ff").unwrap();
         assert_eq!(test, "0b1111000011111111", "test 2 4");
 
-        let test = dec_to_hex.swap("324439924324324235436544328757654635345424324543").unwrap();
-        assert_eq!(test, "0x38d463ad8fa67a74d6e9a610158623c60d2297bf", "test 2 5");
+        let test = dec_to_hex
+            .swap("324439924324324235436544328757654635345424324543")
+            .unwrap();
+
+        assert_eq!(
+            test, "0x38d463ad8fa67a74d6e9a610158623c60d2297bf",
+            "test 2 5"
+        );
 
         let test = dec_to_hex.swap("45641230").unwrap();
         assert_eq!(test, "0x2b86e0e", "test 2 6");
 
-        let test = hex_to_dec.swap("38d463ad8fa67a74d6e9a610158623c60d2297bf").unwrap();
-        assert_eq!(test, "324439924324324235436544328757654635345424324543", "test 2 7");
+        let test = hex_to_dec
+            .swap("38d463ad8fa67a74d6e9a610158623c60d2297bf")
+            .unwrap();
 
-        let sys = NumeralSystem::new("", vec!(vec!("B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"), vec!("a-", "i-","o-","u-"))).unwrap();
+        assert_eq!(
+            test, "324439924324324235436544328757654635345424324543",
+            "test 2 7"
+        );
+
+        let sys = NumeralSystem::new(
+            "",
+            vec![
+                vec![
+                    "B", "K", "D", "F", "G", "J", "L", "M", "N", "P", "R", "S", "T", "V", "X", "Z",
+                ],
+                vec!["a-", "i-", "o-", "u-"],
+            ],
+        )
+        .unwrap();
+
         let hex = NumeralSystem::new_from_tag("hex").unwrap();
         let hex_to_sys = BibiCoder::new(hex, sys);
-        let test = hex_to_sys.swap("de0b295669a9fd93d5f28d9ec85e40f4cb697bae").unwrap();
-        let test2 = hex_to_sys.swap("0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae").unwrap();
+        let test = hex_to_sys
+            .swap("de0b295669a9fd93d5f28d9ec85e40f4cb697bae")
+            .unwrap();
 
-        assert_eq!(test, "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-", "test 2 8");
-        assert_eq!(test2, "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-", "test 2 9");
+        let test2 = hex_to_sys
+            .swap("0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae")
+            .unwrap();
 
-        let sys = NumeralSystem::new("", vec!(vec!("B","K","D","F","G","J","L","M","N","P","R","S","T","V","X","Z"), vec!("a-", "i-","o-","u-"))).unwrap();
+        assert_eq!(
+            test,
+            "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-",
+            "test 2 8"
+        );
+        assert_eq!(
+            test2,
+            "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-",
+            "test 2 9"
+        );
+
+        let sys = NumeralSystem::new(
+            "",
+            vec![
+                vec![
+                    "B", "K", "D", "F", "G", "J", "L", "M", "N", "P", "R", "S", "T", "V", "X", "Z",
+                ],
+                vec!["a-", "i-", "o-", "u-"],
+            ],
+        )
+        .unwrap();
         let hex = NumeralSystem::new_from_tag("hex").unwrap();
         let sys_to_hex = BibiCoder::new(sys, hex);
-        let test = sys_to_hex.swap("Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-").unwrap();
-        assert_eq!(test, "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae", "test 2 10");
+        let test = sys_to_hex
+            .swap(
+                "Fi-Xa-Du-Do-Ji-Li-Ri-Ro-Mu-Vo-Gu-Vi-Mu-Do-Fi-Pu-Sa-Ni-Mo-Ga-Fu-Gu-Du-Lo-Ju-So-So-",
+            )
+            .unwrap();
+
+        assert_eq!(
+            test, "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
+            "test 2 10"
+        );
     }
 
     #[test]
     fn test_autodetect() {
-
         //let dec = NumeralSystem::new("dec", vec!(vec!("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"))).unwrap();
         let hex = NumeralSystem::new_from_tag("hex").unwrap();
         let dec = NumeralSystem::new_from_tag("dec").unwrap();
         let bin = NumeralSystem::new_from_tag("dec").unwrap();
 
-        let test = NumeralSystem::autodetect("0x4324ae34", vec!(&hex, &dec));
+        let test = NumeralSystem::autodetect("0x4324ae34", vec![&hex, &dec]);
         assert!(test.is_some(), "test 3 1");
 
-        let test = NumeralSystem::autodetect("0b0101101", vec!(&hex, &dec));
+        let test = NumeralSystem::autodetect("0b0101101", vec![&hex, &dec]);
         assert!(test.is_none(), "test 3 2");
 
-        let test = NumeralSystem::autodetect("0b0101101", vec!(&hex, &dec, &bin));
+        let test = NumeralSystem::autodetect("0b0101101", vec![&hex, &dec, &bin]);
         assert!(test.is_none(), "test 3 3");
     }
 }

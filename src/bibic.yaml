@@ -25,6 +25,10 @@ after_help: |+
         "digits":[["H", "B", "K", "D"],["O", "A", "E", "I"]]
     }
 
+    Example 3 : base58
+    {
+        "digits": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+    }
 
 author: Jugla F.
 
@@ -50,4 +54,24 @@ args:
         short: c
         long: concat
         help: Concat output into one number if serveral input numbers are present.
+    - outseparator:
+        short: s
+        long: outseparator
+        help: When printing serveral numbers, use this character as separator (default space).
+        takes_value: true
+    - outprefix:
+        short: p
+        long: outprefix
+        help: When printing out, add this prefix before result.
+        takes_value: true
+    - outsuffix:
+        short: x
+        long: outsuffix
+        help: When printing out, add this suffix after result.
+        takes_value: true
+    - regex:
+        short: r
+        long: regex
+        help: Regex for reading numbers.
+        takes_value: true
 
