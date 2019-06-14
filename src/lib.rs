@@ -437,10 +437,7 @@ impl NumeralSystem {
         if tags.contains_key(tag) {
             let prefix = tags[tag].0.clone();
             let vecd = tags[tag].1.clone();
-            Ok(NumeralSystem::new_from_strings(
-                prefix,
-                vecd,
-            )?)
+            Ok(NumeralSystem::new_from_strings(prefix, vecd)?)
         } else {
             Err(BibiError::BadTagNumeralSystem)
         }

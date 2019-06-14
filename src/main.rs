@@ -58,17 +58,12 @@ fn num_from_path(path: &str) -> Result<NumeralSystem, BibiError> {
 
     let test: Result<FakeNumeralSystem, _> = serde_json::from_str(&contents);
     match test {
-        Ok(fakenum) => {
-            return NumeralSystem::new_from_strings(fakenum.prefix, fakenum.digits)
-        }
+        Ok(fakenum) => return NumeralSystem::new_from_strings(fakenum.prefix, fakenum.digits),
         Err(_) => {
             let test: Result<FakeNumeralSystem2, _> = serde_json::from_str(&contents);
             match test {
                 Ok(fakenum) => {
-                    return NumeralSystem::new_from_strings(
-                        fakenum.prefix,
-                        vec![fakenum.digits],
-                    )
+                    return NumeralSystem::new_from_strings(fakenum.prefix, vec![fakenum.digits])
                 }
                 Err(_) => return Err(BibiError::BadNumeralSystem),
             }
@@ -185,7 +180,8 @@ fn main() -> Result<(), BibiError> {
                 input_numbers.push(nextnum);
             }
         }
-    } else {  // no regex
+    } else {
+        // no regex
         if let Some(ins) = matches.values_of("INPUT_NUMBER") {
             for inn in ins {
                 input_numbers.push(String::from(inn));
@@ -207,7 +203,7 @@ fn main() -> Result<(), BibiError> {
             res = res + &output_number;
         } else {
             res = res + &output_number;
-            if length>1 {
+            if length > 1 {
                 res = res + &String::from(sep);
             }
         }
