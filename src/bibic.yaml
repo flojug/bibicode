@@ -1,6 +1,6 @@
 name: bibicode
 about: |
-    This application allows the conversion of any integer from one representation (a numeral system) to another. A numeral system is represented by its digits which can be any combination of UTF-8 chars. For example, "0", "1" will represent binary system.
+    This application allows the conversion of any natural number from one representation (a numeral system) to another. A numeral system is represented by its digits which can be any combination of UTF-8 chars. For example, "0", "1" will represent binary system.
 
 after_help: |+
     The following numeral systems are pre-integrated into the application and can be used :
@@ -34,21 +34,21 @@ author: Jugla F.
 
 args:
     - INPUT_NUMBER:
-        help: input integer to be converted, no limitation in length. Several numbers can be given.
-        required: true
+        help: input natural number to be converted, no limitation in length. Several numbers can be given. If no number given, read from standard input.
+        required: false
         index: 1
         multiple: true
     - from:
         short: f
         long: from
         value_name: NUMERAL_SYSTEM or FILE
-        help: Numeral system of the input integer. Defaults to dec (decimal).
+        help: Numeral system of the input natural number. Defaults to dec (decimal).
         takes_value: true
     - to:
         short: t
         long: to
         value_name: NUMERAL_SYSTEM or FILE
-        help: Numeral system in which input integer must be translated to. Defaults to dec (decimal).
+        help: Numeral system in which input natural number must be translated to. Defaults to dec (decimal).
         takes_value: true
     - concat:
         short: c

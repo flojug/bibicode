@@ -7,6 +7,7 @@ use clap::App;
 use std::fs;
 use std::fs::File;
 use std::path::Path;
+use std::io;
 
 extern crate bibicode;
 use bibicode::{BibiCoder, BibiError, NumeralSystem};
@@ -26,7 +27,7 @@ use std::collections::HashMap;
 // {
 //    "prefix":"0x",
 //    "digits":["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"]
-//}
+// }
 // digits can be the combination of any arrays
 // example :
 // {  "digits":[["H", "B", "K", "D"],["O", "A", "E", "I"]] }
@@ -170,23 +171,29 @@ fn main() -> Result<(), BibiError> {
         to.set_prefix("");
     }
 
+
     let mut input_numbers: Vec<String> = vec![];
 
-    if matches.is_present("regex") {
-        let reg = matches.value_of("regex").unwrap();
-        for input_number in matches.values_of("INPUT_NUMBER").unwrap() {
-            let nums = BibiCoder::extract_numbers(input_number, reg)?;
-            for nextnum in nums {
-                input_numbers.push(nextnum);
+    if let Some(inb) = matches.values_of("INPUT_NUMBER") {
+        //input_numbers = inb.unwrap();
+        if matches.is_present("regex") {
+            let reg = matches.value_of("regex").unwrap();
+            for input_number in inb {
+                let nums = BibiCoder::extract_numbers(input_number, reg)?;
+                for nextnum in nums {
+                    input_numbers.push(nextnum);
+                }
             }
-        }
-    } else {
-        // no regex
-        if let Some(ins) = matches.values_of("INPUT_NUMBER") {
-            for inn in ins {
+        } else {
+            // no regex
+            for inn in inb {
                 input_numbers.push(String::from(inn));
             }
         }
+    } else {
+        // no input number read from stdin
+        let mut buffer = String::new();
+        io::stdin().read_to_string(&mut buffer)?;
     }
 
     let coder = BibiCoder::new(from, to);

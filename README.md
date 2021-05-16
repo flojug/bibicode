@@ -1,12 +1,12 @@
 # bibicode
 
-A crate and an app to convert any integer from one numeral system to another.
+A crate and an app to convert any natural number from one numeral system to another.
 
 Two numeral systems must be defined :
 - one for the input number
 - and one for the output.
 
-Any integer (of any length) can then be converted from one system to the other and vice-versa.
+Any natural number (of any length) can then be converted from one system to the other and vice-versa.
 
 This library uses shift-adjust algorithm (and reversed shift-adjust) to convert numbers. Binary is used as a pivot radix. This method was described here : [Convert binary number to any base](https://www.edn.com/design/systems-design/4460458/Convert-binary-number-to-any-base).
 
@@ -193,7 +193,7 @@ $ bibicode 01746223458145969276700901827421233769953772985502309560518 -f dec -t
 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem
 ```
 
-General prefix, separator and suffix can be given directly to print output of bibicode.
+General prefix, separator and suffix can be given directly to the output of bibicode.
 
 Example swapping HTML RGB colors with hexadecimal :
 ```shell

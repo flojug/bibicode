@@ -5,11 +5,11 @@
 //
 // ! # Bibicode
 //!
-//! This crate can be used to convert any integer from one numeral system to another.
+//! This crate can be used to convert any natural number from one numeral system to another.
 //!
 //! Two numeral systems must be defined : one for the input number and one for the output.
 //!
-//! Any integer (of any length) can then be converted from one system to the other and vice-versa.
+//! Any natural number (of any length) can then be converted from one system to the other and vice-versa.
 //!
 //! This library uses an extension of shift-adjust algorithm (and reversed shift-adjust) to convert numbers. Binary is used as a pivot radix. This method was described here : [Convert binary number to any base](https://www.edn.com/design/systems-design/4460458/Convert-binary-number-to-any-base).
 //!
@@ -515,7 +515,7 @@ impl BibiCoder {
         Ok(numbers)
     }
 
-    /// Swap an integer coded in numsys_in system to numsys_out
+    /// Swap an natural number coded in numsys_in system to numsys_out
     pub fn swap(&self, entry: &str) -> Result<String, BibiError> {
         let pivot = self.tsujda_tfihs(entry)?;
         self.shift_adjust(pivot)
