@@ -7,7 +7,7 @@ use clap::App;
 use std::fs;
 use std::fs::File;
 use std::path::Path;
-use std::io;
+//use std::io;
 
 extern crate bibicode;
 use bibicode::{BibiCoder, BibiError, NumeralSystem};
@@ -192,8 +192,8 @@ fn main() -> Result<(), BibiError> {
         }
     } else {
         // no input number read from stdin
-        let mut buffer = String::new();
-        io::stdin().read_to_string(&mut buffer)?;
+        /*let mut buffer = String::new();
+        io::stdin().read_to_string(&mut buffer)?;*/
     }
 
     let coder = BibiCoder::new(from, to);
