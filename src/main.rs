@@ -142,14 +142,14 @@ fn main() -> Result<(), BibiError> {
         from = init_num(strfrom)?;
         let mut prefok = false;
         for pref in known_prefixes_from_tags.keys() {
-            if (pref.len() > 0) && (pref[..] == number[0..pref.len()]) {
+            if (pref.len() > 0) && (pref.len() < number.len()) && (pref[..] == number[0..pref.len()]) {
                 prefok = true;
                 from = NumeralSystem::new_from_tag(&known_prefixes_from_tags[pref][..]).unwrap();
             }
         }
         if !prefok {
             for pref in known_prefixes_from_xdgs.keys() {
-                if (pref.len() > 0) && (pref[..] == number[0..pref.len()]) {
+                if (pref.len() > 0) && (pref.len() < number.len()) && (pref[..] == number[0..pref.len()]) {
                     prefok = true;
                     from = num_from_path(&known_prefixes_from_xdgs[pref][..]).unwrap();
                 }
