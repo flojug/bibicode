@@ -68,7 +68,7 @@ pub enum BibiError {
     /// Non existent pre-defined numeral system
     BadTagNumeralSystem,
     /// Bad regular expression
-    BadRegularExpression,
+    BadRegularExpression
 }
 
 /// Define a numeral system by enumerating all the digits. The first digit is zero. The radix is equal to the number of digits. One digit can have any number of characters but all digits must have the same length.
@@ -523,6 +523,7 @@ impl BibiCoder {
 
     // compute BCD  numbers into binary
     fn tsujda_tfihs(&self, entry: &str) -> Result<Vec<bool>, BibiError> {
+
         // erase the prefix if present
         let rel_entry: &str;
         if (self.numsys_in.prefix.len() > 0)
@@ -540,6 +541,15 @@ impl BibiCoder {
         let mut pivot: Vec<bool> = vec![];
 
         // compute bcd numbers from the entry
+
+        if rel_entry.len() == 0 {
+            return Err(BibiError::EntryMismatchWithNumeralSystem);
+        }
+
+        if rel_entry.len() as f32 % self.numsys_in.len_digit as f32 > 0.0 {
+            return Err(BibiError::EntryMismatchWithNumeralSystem);
+        }
+
         for i in 0..(rel_entry.len() / self.numsys_in.len_digit) {
             let digit = String::from(
                 &rel_entry[i * self.numsys_in.len_digit
@@ -755,6 +765,20 @@ mod tests {
             test, "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
             "test 2 10"
         );
+
+    }
+
+    #[test]
+    fn test_errorok() {
+        let dec = NumeralSystem::new_from_tag("dec").unwrap();
+        let bibi = NumeralSystem::new_from_tag("bibi").unwrap();
+        let bibi_to_dec: BibiCoder = BibiCoder::new(bibi, dec);
+
+        let test = bibi_to_dec.swap("0");
+        assert!(test.is_err());
+
+        let test = bibi_to_dec.swap("");
+        assert!(test.is_err());
     }
 
     #[test]

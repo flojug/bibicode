@@ -33,7 +33,7 @@ after_help: |+
 author: Jugla F.
 
 args:
-    - INPUT_NUMBER:
+    - INPUT:
         help: input natural number to be converted, no limitation in length. Several numbers can be given. If no number given, read from standard input.
         required: false
         index: 1

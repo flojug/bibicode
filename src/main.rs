@@ -137,7 +137,7 @@ fn main() -> Result<(), BibiError> {
     if matches.value_of("from").is_none() {
         // if entry num system not given, try to find it out
         // from the prefix of input number
-        let input_numbers: Vec<_> = matches.values_of("INPUT_NUMBER").unwrap().collect();
+        let input_numbers: Vec<_> = matches.values_of("INPUT").unwrap().collect();
         let number: &str = input_numbers.first().unwrap();
         from = init_num(strfrom)?;
         let mut prefok = false;
@@ -174,7 +174,7 @@ fn main() -> Result<(), BibiError> {
 
     let mut input_numbers: Vec<String> = vec![];
 
-    if let Some(inb) = matches.values_of("INPUT_NUMBER") {
+    if let Some(inb) = matches.values_of("INPUT") {
         //input_numbers = inb.unwrap();
         if matches.is_present("regex") {
             let reg = matches.value_of("regex").unwrap();
