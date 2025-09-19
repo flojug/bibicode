@@ -19,8 +19,6 @@ The following numeral systems are pre-integrated into the application and can be
 - base58 for base 58 as used in bitcoin address representation
 - bibi for bibi-binary as defined by Boby Lapointe, the inspirator of this application
 - budu for an experimental numeral system which is well readable
-- utf8 for an experimental numeral system which is a combination of several utf8 symbols
-- chin for an experimental numeral system which uses chinese characters
 
 
 ## Example : using crate
@@ -80,11 +78,6 @@ $ bibicode 340282366920938463463374607431768211455 -f dec -t hex
 0xffffffffffffffffffffffffffffffff
 
 
-$ bibicode 5454366920938463463375407431768211455 -f dec -t utf8
-■♢♥♢♥♤♣♧★○■☆♠◇♥♧♠♡♣♤♠⚐♦♡■⚐♥♤◀⚐♣◇●◁◀♡♦♢
-
-$ bibicode 5454366920938463463375407431768211455 -f dec -t chin
-㑈㹨㕫㕃㽃㹼㷶㓱㸿㰪㯿
 ```
 
 Numeral System can be represented by a json file :

@@ -72,7 +72,7 @@ pub enum BibiError {
 }
 
 /// Define a numeral system by enumerating all the digits. The first digit is zero. The radix is equal to the number of digits. One digit can have any number of characters but all digits must have the same length.
-#[derive(Debug)]
+#[derive(Debug, Clone, Default,PartialEq, Eq)]
 pub struct NumeralSystem {
     prefix: String,
     len_digit: usize,
@@ -101,6 +101,15 @@ impl NumeralSystem {
         return NumeralSystem::new_rec(prefix, &entry, 0);
     }
 
+    pub fn char_authorized(s: &str) -> bool {
+        s.chars().all(|c| {
+            c.is_ascii_alphanumeric() ||
+            c == '-' ||
+            c == '#' ||
+            c == '_'
+        })
+    }
+
     /// Same as ::new but from vec of strings.
     pub fn new_from_strings(
         prefix: String,
@@ -111,6 +120,17 @@ impl NumeralSystem {
             .map(|v| v.iter().map(|s| &**s).collect())
             .collect();
         NumeralSystem::new(&prefix[..], entry_str)
+    }
+
+    pub fn new_from_tag(tag: &str) -> Result<NumeralSystem, BibiError> {
+        let tags = NumeralSystem::get_tags();
+        if tags.contains_key(tag) {
+            let prefix = tags[tag].0.clone();
+            let vecd = tags[tag].1.clone();
+            Ok(NumeralSystem::new_from_strings(prefix, vecd)?)
+        } else {
+            Err(BibiError::BadTagNumeralSystem)
+        }
     }
 
     // internal method to build system from vec of vec
@@ -142,6 +162,9 @@ impl NumeralSystem {
         let mut cpt: u32 = 0;
         for digit in first_entry {
             if digit.len() != len_digit {
+                return Err(BibiError::BadNumeralSystem);
+            }
+            if ! NumeralSystem::char_authorized(digit) {
                 return Err(BibiError::BadNumeralSystem);
             }
             if let Some(num) = sub_num_sys {
@@ -183,19 +206,11 @@ impl NumeralSystem {
     /// - bibi for "bibi" as defined by Boby Lapointe
     /// - bin for binary
     /// - budu for a test system easy to read
-    /// - utf8 for a test system with UTF8 characters
     /// - base58 for base58 as used in bitcoin
     ///
     /// UTILISER lazy-static
     fn get_tags() -> IndexMap<&'static str, (String, Vec<Vec<String>>)> {
-        let chin_factory = || -> Vec<Vec<String>> {
-            let mut ret: Vec<Vec<String>> = vec![vec![]];
-            for x in 0x3400..0x4000 {
-                let ptrc = char::from_u32(x).unwrap().to_string();
-                ret[0].push(ptrc);
-            }
-            ret
-        };
+
         let mut tags: IndexMap<&'static str, (String, Vec<Vec<String>>)> = IndexMap::new();
         tags.insert(
             "bin",
@@ -319,38 +334,6 @@ impl NumeralSystem {
             ),
         );
         tags.insert(
-            "utf8",
-            (
-                String::from(""),
-                vec![
-                    vec![
-                        String::from("\u{25a0}"),
-                        String::from("\u{25c0}"),
-                        String::from("\u{25cf}"),
-                        String::from("\u{2660}"),
-                        String::from("\u{2665}"),
-                        String::from("\u{2666}"),
-                        String::from("\u{2663}"),
-                        String::from("\u{2691}"),
-                        String::from("\u{25c6}"),
-                        String::from("\u{2605}"),
-                    ],
-                    vec![
-                        String::from("\u{25a1}"),
-                        String::from("\u{25c1}"),
-                        String::from("\u{25cb}"),
-                        String::from("\u{2664}"),
-                        String::from("\u{2661}"),
-                        String::from("\u{2662}"),
-                        String::from("\u{2667}"),
-                        String::from("\u{2690}"),
-                        String::from("\u{25c7}"),
-                        String::from("\u{2606}"),
-                    ],
-                ],
-            ),
-        );
-        tags.insert(
             "base58",
             (
                 String::from(""),
@@ -416,7 +399,6 @@ impl NumeralSystem {
                 ]],
             ),
         );
-        tags.insert("chin", (String::from(""), chin_factory()));
         tags
     }
 
@@ -430,17 +412,6 @@ impl NumeralSystem {
             }
         }
         ret
-    }
-
-    pub fn new_from_tag(tag: &str) -> Result<NumeralSystem, BibiError> {
-        let tags = NumeralSystem::get_tags();
-        if tags.contains_key(tag) {
-            let prefix = tags[tag].0.clone();
-            let vecd = tags[tag].1.clone();
-            Ok(NumeralSystem::new_from_strings(prefix, vecd)?)
-        } else {
-            Err(BibiError::BadTagNumeralSystem)
-        }
     }
 
     /// Returns the legth of a digit (all digits have the same length)
@@ -547,6 +518,10 @@ impl BibiCoder {
         }
 
         if rel_entry.len() as f32 % self.numsys_in.len_digit as f32 > 0.0 {
+            return Err(BibiError::EntryMismatchWithNumeralSystem);
+        }
+
+        if ! NumeralSystem::char_authorized(rel_entry) {
             return Err(BibiError::EntryMismatchWithNumeralSystem);
         }
 
