@@ -2,6 +2,8 @@
 
 A crate and an app to convert any natural number from one numeral system to another.
 
+See demo here : https://flojug.github.io/demo-leptos-bibicode/
+
 Two numeral systems must be defined :
 - one for the input number
 - and one for the output.
